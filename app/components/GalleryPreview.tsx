@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 export default function GalleryPreview() {
@@ -14,10 +15,68 @@ export default function GalleryPreview() {
           <div className="w-20 h-0.5 bg-gold mx-auto" />
         </div>
 
-        <div className="flex items-center justify-center h-64 bg-gray-50 rounded-xl border border-sand">
-          <p className="font-lato text-gray-400 text-sm tracking-wider uppercase">
-            Photos à venir
-          </p>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+          {/* Ligne 1 - pleine largeur */}
+          <div className="col-span-2 md:col-span-3 relative h-64 md:h-96 rounded-xl overflow-hidden">
+            <Image
+              src="/photos/exterieur/exterieur-1.jpeg"
+              alt="Vue extérieure de la villa Carpe Diem"
+              fill
+              className="object-cover hover:scale-105 transition-transform duration-700"
+            />
+          </div>
+
+          {/* Ligne 2 */}
+          <div className="relative h-48 md:h-64 rounded-xl overflow-hidden">
+            <Image
+              src="/photos/interieur/salon%20-%204.jpeg"
+              alt="Salon"
+              fill
+              className="object-cover hover:scale-105 transition-transform duration-700"
+            />
+          </div>
+          <div className="relative h-48 md:h-64 rounded-xl overflow-hidden">
+            <Image
+              src="/photos/exterieur/exterieur-4.jpeg"
+              alt="Extérieur"
+              fill
+              className="object-cover hover:scale-105 transition-transform duration-700"
+            />
+          </div>
+          <div className="col-span-2 md:col-span-1 relative h-48 md:h-64 rounded-xl overflow-hidden">
+            <Image
+              src="/photos/exterieur/Coucher%20de%20soleil%20rouppione.jpeg"
+              alt="Coucher de soleil"
+              fill
+              className="object-cover hover:scale-105 transition-transform duration-700"
+            />
+          </div>
+
+          {/* Ligne 3 */}
+          <div className="relative h-48 md:h-64 rounded-xl overflow-hidden">
+            <Image
+              src="/photos/interieur/chambre%204%20-%201.jpeg"
+              alt="Chambre"
+              fill
+              className="object-cover hover:scale-105 transition-transform duration-700"
+            />
+          </div>
+          <div className="relative h-48 md:h-64 rounded-xl overflow-hidden">
+            <Image
+              src="/photos/interieur/cuisine.jpeg"
+              alt="Cuisine"
+              fill
+              className="object-cover hover:scale-105 transition-transform duration-700"
+            />
+          </div>
+          <div className="relative h-48 md:h-64 rounded-xl overflow-hidden">
+            <Image
+              src="/photos/interieur/terasse.jpeg"
+              alt="Terrasse"
+              fill
+              className="object-cover hover:scale-105 transition-transform duration-700"
+            />
+          </div>
         </div>
 
         <div className="text-center mt-10">

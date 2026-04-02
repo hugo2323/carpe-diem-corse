@@ -1,8 +1,20 @@
+import Image from "next/image";
+
 export default function HeroSection() {
   return (
     <section className="relative h-screen min-h-[600px] flex items-center justify-center overflow-hidden">
-      {/* Background gradient (photos à venir) */}
-      <div className="absolute inset-0 bg-gradient-to-b from-sea-blue via-sea-blue/80 to-sea-blue/90" />
+      {/* Background image */}
+      <div className="absolute inset-0">
+        <Image
+          src="/photos/exterieur/exterieur-1.jpeg"
+          alt="Villa Carpe Diem - Vue extérieure"
+          fill
+          className="object-cover"
+          priority
+          quality={90}
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-sea-blue/60 via-sea-blue/30 to-sea-blue/70" />
+      </div>
 
       {/* Content */}
       <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
