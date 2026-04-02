@@ -71,7 +71,7 @@ export default function TarifsSection() {
             Réserver sur Airbnb
           </a>
           <a
-            href="https://www.airbnb.fr/rooms/24533933"
+            href="https://www.abritel.fr/location-vacances/p2347511"
             target="_blank"
             rel="noopener noreferrer"
             className="bg-sea-blue hover:bg-sea-blue-light text-white px-8 py-4 rounded font-lato font-bold tracking-wider uppercase text-sm text-center transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-0.5"

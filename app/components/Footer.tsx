@@ -57,13 +57,13 @@ export default function Footer() {
                 Airbnb
               </a>
               <a
-                href="https://maps.google.com/?q=Pietrosella+Le+Ruppione+Corse"
+                href="https://www.google.com/maps/place/Villa+vue+mer+6%2F8+personnes+(SCI+horizon)/@41.8260299,8.7846614,17z"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 font-lato text-gray-400 hover:text-gold transition-colors duration-200 text-sm"
               >
                 <span className="text-base">📍</span>
-                Google Maps
+                Voir sur Google Maps
               </a>
               <a
                 href="mailto:hugo.valette@outlook.com"

@@ -71,6 +71,16 @@ export default function ContactSection() {
                     ) : (
                       <p className="font-lato text-white">{c.value}</p>
                     )}
+                    {c.label === "Adresse" && (
+                      <a
+                        href="https://www.google.com/maps/place/Villa+vue+mer+6%2F8+personnes+(SCI+horizon)/@41.8260299,8.7846614,17z"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-lato text-gold hover:text-white transition-colors duration-200 text-sm mt-1 inline-block"
+                      >
+                        📍 Voir sur Google Maps
+                      </a>
+                    )}
                   </div>
                 </div>
               ))}
