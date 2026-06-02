@@ -8,6 +8,7 @@ const equipements = [
   "Salle de bain complète",
   "Jardin paysager",
   "2 WC indépendants",
+  "4 climatiseurs portables",
   "Douche extérieure",
   "Parking résidence",
   "Conciergerie sur place",
@@ -36,7 +37,8 @@ export default function VillaSection() {
               mer et les îles Sanguinaires. Le logement peut accueillir jusqu&apos;à
               8 personnes et dispose de 4 chambres, dont 2 mansardées. Il
               comprend une salle de bain avec baignoire et douche, ainsi que
-              deux WC indépendants. À l&apos;extérieur : terrasse, jardin paysager,
+              deux WC indépendants. La maison est équipée de 4 climatiseurs portables
+              pour votre confort. À l&apos;extérieur : terrasse, jardin paysager,
               barbecue et douche extérieure. Wi-Fi inclus. Parking résidence.
               La plage du Ruppione est à 1 km (10 min à pied, 3 min en voiture).
               À 30 minutes de l&apos;aéroport d&apos;Ajaccio.
