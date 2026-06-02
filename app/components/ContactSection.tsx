@@ -2,6 +2,14 @@
 
 import { useState } from "react";
 
+// Clé Web3Forms (publique par conception) — obtenue gratuitement sur
+// https://web3forms.com en entrant l'adresse de réception.
+const WEB3FORMS_ACCESS_KEY =
+  process.env.NEXT_PUBLIC_WEB3FORMS_ACCESS_KEY ||
+  "5d2024a2-f384-4502-9b1b-57e56fb1947c";
+
+type Status = "idle" | "sending" | "success" | "error";
+
 export default function ContactSection() {
   const [form, setForm] = useState({
     nom: "",
@@ -12,14 +20,47 @@ export default function ContactSection() {
     personnes: "",
     message: "",
   });
+  const [status, setStatus] = useState<Status>("idle");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const subject = encodeURIComponent("Demande de réservation - Villa Carpe Diem");
-    const body = encodeURIComponent(
-      `Nom : ${form.nom}\nEmail : ${form.email}\nTéléphone : ${form.telephone}\nDate d'arrivée : ${form.dateArrivee}\nDate de départ : ${form.dateDepart}\nNombre de personnes : ${form.personnes}\n\nMessage :\n${form.message}`
-    );
-    window.location.href = `mailto:hugo.valette@outlook.com?subject=${subject}&body=${body}`;
+    setStatus("sending");
+
+    try {
+      const res = await fetch("https://api.web3forms.com/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({
+          access_key: WEB3FORMS_ACCESS_KEY,
+          subject: "Demande de réservation - Villa Carpe Diem",
+          from_name: "Site Carpe Diem",
+          nom: form.nom,
+          email: form.email,
+          telephone: form.telephone,
+          date_arrivee: form.dateArrivee,
+          date_depart: form.dateDepart,
+          personnes: form.personnes,
+          message: form.message,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setStatus("success");
+        setForm({
+          nom: "",
+          email: "",
+          telephone: "",
+          dateArrivee: "",
+          dateDepart: "",
+          personnes: "",
+          message: "",
+        });
+      } else {
+        setStatus("error");
+      }
+    } catch {
+      setStatus("error");
+    }
   };
 
   const handleChange = (
@@ -100,122 +141,149 @@ export default function ContactSection() {
             <h3 className="font-playfair text-2xl text-sea-blue mb-6 font-semibold">
               Demande de réservation
             </h3>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block font-lato text-sm text-gray-600 mb-1">
-                  Nom complet *
-                </label>
-                <input
-                  type="text"
-                  name="nom"
-                  required
-                  value={form.nom}
-                  onChange={handleChange}
-                  className="w-full border border-sand rounded-lg px-4 py-3 font-lato text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-sea-blue/30 focus:border-sea-blue transition-colors"
-                  placeholder="Jean Dupont"
-                />
-              </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block font-lato text-sm text-gray-600 mb-1">
-                    Email *
-                  </label>
-                  <input
-                    type="email"
-                    name="email"
-                    required
-                    value={form.email}
-                    onChange={handleChange}
-                    className="w-full border border-sand rounded-lg px-4 py-3 font-lato text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-sea-blue/30 focus:border-sea-blue transition-colors"
-                    placeholder="jean@email.com"
-                  />
-                </div>
-                <div>
-                  <label className="block font-lato text-sm text-gray-600 mb-1">
-                    Téléphone
-                  </label>
-                  <input
-                    type="tel"
-                    name="telephone"
-                    value={form.telephone}
-                    onChange={handleChange}
-                    className="w-full border border-sand rounded-lg px-4 py-3 font-lato text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-sea-blue/30 focus:border-sea-blue transition-colors"
-                    placeholder="06 xx xx xx xx"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block font-lato text-sm text-gray-600 mb-1">
-                    Date d&apos;arrivée *
-                  </label>
-                  <input
-                    type="date"
-                    name="dateArrivee"
-                    required
-                    value={form.dateArrivee}
-                    onChange={handleChange}
-                    className="w-full border border-sand rounded-lg px-4 py-3 font-lato text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-sea-blue/30 focus:border-sea-blue transition-colors"
-                  />
-                </div>
-                <div>
-                  <label className="block font-lato text-sm text-gray-600 mb-1">
-                    Date de départ *
-                  </label>
-                  <input
-                    type="date"
-                    name="dateDepart"
-                    required
-                    value={form.dateDepart}
-                    onChange={handleChange}
-                    className="w-full border border-sand rounded-lg px-4 py-3 font-lato text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-sea-blue/30 focus:border-sea-blue transition-colors"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block font-lato text-sm text-gray-600 mb-1">
-                  Nombre de personnes *
-                </label>
-                <select
-                  name="personnes"
-                  required
-                  value={form.personnes}
-                  onChange={handleChange}
-                  className="w-full border border-sand rounded-lg px-4 py-3 font-lato text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-sea-blue/30 focus:border-sea-blue transition-colors"
+            {status === "success" ? (
+              <div className="text-center py-12">
+                <div className="text-5xl mb-4">✅</div>
+                <p className="font-playfair text-xl text-sea-blue font-semibold mb-2">
+                  Demande envoyée !
+                </p>
+                <p className="font-lato text-gray-600 text-sm">
+                  Merci, nous vous répondrons généralement sous 24h.
+                </p>
+                <button
+                  onClick={() => setStatus("idle")}
+                  className="mt-6 font-lato text-sm text-sea-blue underline hover:text-gold transition-colors"
                 >
-                  <option value="">Sélectionner</option>
-                  {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
-                    <option key={n} value={n}>
-                      {n} personne{n > 1 ? "s" : ""}
-                    </option>
-                  ))}
-                </select>
+                  Envoyer une autre demande
+                </button>
               </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label className="block font-lato text-sm text-gray-600 mb-1">
+                    Nom complet *
+                  </label>
+                  <input
+                    type="text"
+                    name="nom"
+                    required
+                    value={form.nom}
+                    onChange={handleChange}
+                    className="w-full border border-sand rounded-lg px-4 py-3 font-lato text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-sea-blue/30 focus:border-sea-blue transition-colors"
+                    placeholder="Jean Dupont"
+                  />
+                </div>
 
-              <div>
-                <label className="block font-lato text-sm text-gray-600 mb-1">
-                  Message
-                </label>
-                <textarea
-                  name="message"
-                  rows={4}
-                  value={form.message}
-                  onChange={handleChange}
-                  className="w-full border border-sand rounded-lg px-4 py-3 font-lato text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-sea-blue/30 focus:border-sea-blue transition-colors resize-none"
-                  placeholder="Questions, demandes particulières..."
-                />
-              </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block font-lato text-sm text-gray-600 mb-1">
+                      Email *
+                    </label>
+                    <input
+                      type="email"
+                      name="email"
+                      required
+                      value={form.email}
+                      onChange={handleChange}
+                      className="w-full border border-sand rounded-lg px-4 py-3 font-lato text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-sea-blue/30 focus:border-sea-blue transition-colors"
+                      placeholder="jean@email.com"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-lato text-sm text-gray-600 mb-1">
+                      Téléphone
+                    </label>
+                    <input
+                      type="tel"
+                      name="telephone"
+                      value={form.telephone}
+                      onChange={handleChange}
+                      className="w-full border border-sand rounded-lg px-4 py-3 font-lato text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-sea-blue/30 focus:border-sea-blue transition-colors"
+                      placeholder="06 xx xx xx xx"
+                    />
+                  </div>
+                </div>
 
-              <button
-                type="submit"
-                className="w-full bg-gold hover:bg-gold-light text-white py-4 rounded-lg font-lato font-bold tracking-wider uppercase text-sm transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-0.5"
-              >
-                Envoyer la demande
-              </button>
-            </form>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block font-lato text-sm text-gray-600 mb-1">
+                      Date d&apos;arrivée *
+                    </label>
+                    <input
+                      type="date"
+                      name="dateArrivee"
+                      required
+                      value={form.dateArrivee}
+                      onChange={handleChange}
+                      className="w-full border border-sand rounded-lg px-4 py-3 font-lato text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-sea-blue/30 focus:border-sea-blue transition-colors"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-lato text-sm text-gray-600 mb-1">
+                      Date de départ *
+                    </label>
+                    <input
+                      type="date"
+                      name="dateDepart"
+                      required
+                      value={form.dateDepart}
+                      onChange={handleChange}
+                      className="w-full border border-sand rounded-lg px-4 py-3 font-lato text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-sea-blue/30 focus:border-sea-blue transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block font-lato text-sm text-gray-600 mb-1">
+                    Nombre de personnes *
+                  </label>
+                  <select
+                    name="personnes"
+                    required
+                    value={form.personnes}
+                    onChange={handleChange}
+                    className="w-full border border-sand rounded-lg px-4 py-3 font-lato text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-sea-blue/30 focus:border-sea-blue transition-colors"
+                  >
+                    <option value="">Sélectionner</option>
+                    {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+                      <option key={n} value={n}>
+                        {n} personne{n > 1 ? "s" : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-lato text-sm text-gray-600 mb-1">
+                    Message
+                  </label>
+                  <textarea
+                    name="message"
+                    rows={4}
+                    value={form.message}
+                    onChange={handleChange}
+                    className="w-full border border-sand rounded-lg px-4 py-3 font-lato text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-sea-blue/30 focus:border-sea-blue transition-colors resize-none"
+                    placeholder="Questions, demandes particulières..."
+                  />
+                </div>
+
+                {status === "error" && (
+                  <p className="font-lato text-sm text-red-600">
+                    Une erreur est survenue. Réessayez ou contactez-nous par
+                    téléphone au 06.74.25.63.36.
+                  </p>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={status === "sending"}
+                  className="w-full bg-gold hover:bg-gold-light text-white py-4 rounded-lg font-lato font-bold tracking-wider uppercase text-sm transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+                >
+                  {status === "sending" ? "Envoi en cours..." : "Envoyer la demande"}
+                </button>
+              </form>
+            )}
           </div>
         </div>
       </div>
