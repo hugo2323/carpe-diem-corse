@@ -1,8 +1,8 @@
 import Image from "next/image";
 
-const photos = Array.from({ length: 17 }, (_, i) => ({
-  src: `/photos/voiture/bigster-${i + 1}.jpg`,
-  alt: `Dacia Bigster - photo ${i + 1}`,
+const photos = [1, 6, 7, 8, 9, 10, 11, 17].map((n) => ({
+  src: `/photos/voiture/bigster-${n}.jpg`,
+  alt: `Dacia Bigster - photo ${n}`,
 }));
 
 const [hero, ...gallery] = photos;
