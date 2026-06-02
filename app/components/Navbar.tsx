@@ -35,7 +35,6 @@ export default function Navbar() {
             {[
               { label: "La Villa", href: "/#villa" },
               { label: "Galerie", href: "/galerie" },
-              { label: "Tarifs", href: "/#tarifs" },
               { label: "Contact", href: "/#reserver" },
             ].map((item) => (
               <a
@@ -86,7 +85,6 @@ export default function Navbar() {
             {[
               { label: "La Villa", href: "/#villa" },
               { label: "Galerie", href: "/galerie" },
-              { label: "Tarifs", href: "/#tarifs" },
               { label: "Contact", href: "/#reserver" },
             ].map((item) => (
               <a

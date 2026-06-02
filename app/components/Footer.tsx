@@ -27,7 +27,6 @@ export default function Footer() {
                 { label: "Accueil", href: "/" },
                 { label: "La Villa", href: "/#villa" },
                 { label: "Galerie", href: "/galerie" },
-                { label: "Tarifs", href: "/#tarifs" },
                 { label: "Contact", href: "/#reserver" },
               ].map((item) => (
                 <a

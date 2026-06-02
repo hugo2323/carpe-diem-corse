@@ -3,7 +3,7 @@ import HeroSection from "./components/HeroSection";
 import HighlightsSection from "./components/HighlightsSection";
 import VillaSection from "./components/VillaSection";
 import GalleryPreview from "./components/GalleryPreview";
-import TarifsSection from "./components/TarifsSection";
+import PricingCTA from "./components/PricingCTA";
 import CarSection from "./components/CarSection";
 import ContactSection from "./components/ContactSection";
 import Footer from "./components/Footer";
@@ -16,7 +16,7 @@ export default function Home() {
       <HighlightsSection />
       <VillaSection />
       <GalleryPreview />
-      <TarifsSection />
+      <PricingCTA />
       <CarSection />
       <ContactSection />
       <Footer />
