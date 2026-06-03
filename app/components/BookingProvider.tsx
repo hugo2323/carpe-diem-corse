@@ -6,10 +6,12 @@ export type BookingSelection = {
   checkIn: string; // YYYY-MM-DD
   checkOut: string; // YYYY-MM-DD
   nights: number;
-  villaTotal: number;
+  villaBase: number; // villa plein tarif
+  villaDiscountPct: number; // remise dernière minute appliquée (0 si aucune)
+  villaTotal: number; // villa après remise
   carTotal: number; // coût voiture si ajoutée, sinon 0
   withCar: boolean;
-  total: number; // tarif indicatif EUR (villa + voiture si withCar)
+  total: number; // tarif indicatif EUR (villa remisée + voiture si withCar)
 };
 
 type BookingCtx = {

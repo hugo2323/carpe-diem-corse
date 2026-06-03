@@ -88,8 +88,11 @@ export default function AvailabilityCalendar() {
   }, [cursor]);
 
   const currentQuote = useMemo(
-    () => (checkIn && checkOut ? quote(checkIn, checkOut, withCar) : null),
-    [checkIn, checkOut, withCar]
+    () =>
+      checkIn && checkOut && today
+        ? quote(checkIn, checkOut, withCar, today)
+        : null,
+    [checkIn, checkOut, withCar, today]
   );
 
   if (!cursor || !today || minMonth === null) {
@@ -160,6 +163,8 @@ export default function AvailabilityCalendar() {
       checkIn,
       checkOut,
       nights: currentQuote.nights,
+      villaBase: currentQuote.villaBase,
+      villaDiscountPct: currentQuote.villaDiscountPct,
       villaTotal: currentQuote.villaTotal,
       carTotal: currentQuote.withCar ? currentQuote.carTotal : 0,
       withCar: currentQuote.withCar,
@@ -173,6 +178,17 @@ export default function AvailabilityCalendar() {
 
   return (
     <div className="max-w-xl mx-auto">
+      {/* Bandeau offre dernière minute */}
+      <div className="mb-6 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-center">
+        <p className="font-lato text-sm text-red-700 font-bold">
+          🔥 Offre dernière minute — jusqu&apos;à −40% sur la villa
+        </p>
+        <p className="font-lato text-xs text-red-500 mt-0.5">
+          −40% sur les 7 prochains jours · −20% sous 15 jours · −10% jusqu&apos;à
+          la fin du mois
+        </p>
+      </div>
+
       {/* En-tête : navigation mois */}
       <div className="flex items-center justify-between mb-6">
         <button
@@ -317,8 +333,18 @@ export default function AvailabilityCalendar() {
                   <span className="text-gray-400">
                     (~{currentQuote.avgPerNight} €/nuit)
                   </span>
+                  {currentQuote.villaDiscountPct > 0 && (
+                    <span className="ml-2 inline-block bg-red-500 text-white text-[11px] font-bold px-2 py-0.5 rounded-full align-middle">
+                      −{currentQuote.villaDiscountPct}%
+                    </span>
+                  )}
                 </span>
-                <span className="text-sea-blue font-semibold">
+                <span className="text-sea-blue font-semibold whitespace-nowrap">
+                  {currentQuote.villaDiscountPct > 0 && (
+                    <span className="line-through text-gray-400 font-normal mr-2">
+                      ~{currentQuote.villaBase.toLocaleString("fr-FR")} €
+                    </span>
+                  )}
                   ~{currentQuote.villaTotal.toLocaleString("fr-FR")} €
                 </span>
               </div>
@@ -342,6 +368,13 @@ export default function AvailabilityCalendar() {
                 </span>
               </label>
             </div>
+
+            {currentQuote.villaSaved > 0 && (
+              <p className="mt-3 text-center font-lato text-sm text-red-600 font-semibold">
+                🔥 Offre dernière minute : vous économisez ~
+                {currentQuote.villaSaved.toLocaleString("fr-FR")} € sur la villa
+              </p>
+            )}
 
             {/* Total */}
             <div className="flex items-end justify-between mt-4 pt-4 border-t border-gold/20">

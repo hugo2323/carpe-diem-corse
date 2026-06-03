@@ -41,6 +41,10 @@ export default function ContactSection() {
           "fr-FR"
         )} € + voiture ${selection.carTotal.toLocaleString("fr-FR")} €)`
       : "";
+    const promoPart =
+      selection.villaDiscountPct > 0
+        ? ` Offre dernière minute −${selection.villaDiscountPct}% appliquée sur la villa.`
+        : "";
     setForm((f) => ({
       ...f,
       dateArrivee: selection.checkIn,
@@ -53,7 +57,7 @@ export default function ContactSection() {
           selection.nights > 1 ? "s" : ""
         })${carPart}. Tarif indicatif estimé : ~${selection.total.toLocaleString(
           "fr-FR"
-        )} €${breakdown}. Merci de me confirmer la disponibilité et le tarif exact.`,
+        )} €${breakdown}.${promoPart} Merci de me confirmer la disponibilité et le tarif exact.`,
     }));
   }, [selection]);
 
