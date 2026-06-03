@@ -57,6 +57,7 @@ export default function AvailabilityCalendar() {
   // Sélection de séjour
   const [checkIn, setCheckIn] = useState<string | null>(null);
   const [checkOut, setCheckOut] = useState<string | null>(null);
+  const [withCar, setWithCar] = useState(false);
 
   useEffect(() => {
     const now = new Date();
@@ -87,8 +88,8 @@ export default function AvailabilityCalendar() {
   }, [cursor]);
 
   const currentQuote = useMemo(
-    () => (checkIn && checkOut ? quote(checkIn, checkOut) : null),
-    [checkIn, checkOut]
+    () => (checkIn && checkOut ? quote(checkIn, checkOut, withCar) : null),
+    [checkIn, checkOut, withCar]
   );
 
   if (!cursor || !today || minMonth === null) {
@@ -150,6 +151,7 @@ export default function AvailabilityCalendar() {
   const resetSelection = () => {
     setCheckIn(null);
     setCheckOut(null);
+    setWithCar(false);
   };
 
   const confirmSelection = () => {
@@ -158,6 +160,9 @@ export default function AvailabilityCalendar() {
       checkIn,
       checkOut,
       nights: currentQuote.nights,
+      villaTotal: currentQuote.villaTotal,
+      carTotal: currentQuote.withCar ? currentQuote.carTotal : 0,
+      withCar: currentQuote.withCar,
       total: currentQuote.total,
     });
     document.getElementById("reserver")?.scrollIntoView({ behavior: "smooth" });
@@ -295,25 +300,62 @@ export default function AvailabilityCalendar() {
 
         {checkIn && checkOut && currentQuote && (
           <div className="bg-cream rounded-2xl p-6 border border-gold/20">
-            <div className="flex items-center justify-between gap-4 flex-wrap">
-              <div>
-                <p className="font-lato text-sm text-gray-600">
-                  Du <strong className="text-sea-blue">{frDate(checkIn)}</strong>{" "}
-                  au <strong className="text-sea-blue">{frDate(checkOut)}</strong>
-                </p>
-                <p className="font-lato text-xs text-gray-500 mt-1">
-                  {currentQuote.nights} nuit{currentQuote.nights > 1 ? "s" : ""} ·
-                  ~{currentQuote.avgPerNight} €/nuit
-                </p>
+            <p className="font-lato text-sm text-gray-600">
+              Du <strong className="text-sea-blue">{frDate(checkIn)}</strong> au{" "}
+              <strong className="text-sea-blue">{frDate(checkOut)}</strong>
+              <span className="text-gray-500">
+                {" "}
+                · {currentQuote.nights} nuit{currentQuote.nights > 1 ? "s" : ""}
+              </span>
+            </p>
+
+            {/* Ventilation villa + voiture */}
+            <div className="mt-4 space-y-2 font-lato text-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-gray-700">
+                  Villa{" "}
+                  <span className="text-gray-400">
+                    (~{currentQuote.avgPerNight} €/nuit)
+                  </span>
+                </span>
+                <span className="text-sea-blue font-semibold">
+                  ~{currentQuote.villaTotal.toLocaleString("fr-FR")} €
+                </span>
               </div>
-              <div className="text-right">
-                <p className="font-playfair text-3xl text-sea-blue">
+
+              <label className="flex items-center justify-between cursor-pointer select-none">
+                <span className="flex items-center gap-2 text-gray-700">
+                  <input
+                    type="checkbox"
+                    checked={withCar}
+                    onChange={(e) => setWithCar(e.target.checked)}
+                    className="w-4 h-4 accent-gold"
+                  />
+                  🚗 Voiture (Dacia Bigster)
+                </span>
+                <span
+                  className={
+                    withCar ? "text-sea-blue font-semibold" : "text-gray-400"
+                  }
+                >
+                  +{currentQuote.carTotal.toLocaleString("fr-FR")} €
+                </span>
+              </label>
+            </div>
+
+            {/* Total */}
+            <div className="flex items-end justify-between mt-4 pt-4 border-t border-gold/20">
+              <span className="font-lato text-sm text-gray-600">
+                Total {withCar ? "tout inclus" : "villa"}
+              </span>
+              <span className="text-right">
+                <span className="font-playfair text-3xl text-sea-blue block leading-none">
                   ~{currentQuote.total.toLocaleString("fr-FR")} €
-                </p>
-                <p className="font-lato text-[11px] text-gray-500 uppercase tracking-wider">
+                </span>
+                <span className="font-lato text-[11px] text-gray-500 uppercase tracking-wider">
                   Tarif indicatif
-                </p>
-              </div>
+                </span>
+              </span>
             </div>
 
             <div className="flex gap-3 mt-5">

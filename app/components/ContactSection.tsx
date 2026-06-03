@@ -33,6 +33,14 @@ export default function ContactSection() {
   // calendrier de disponibilités (bouton « Demander ces dates »).
   useEffect(() => {
     if (!selection) return;
+    const carPart = selection.withCar
+      ? " avec la voiture (Dacia Bigster)"
+      : "";
+    const breakdown = selection.withCar
+      ? ` (villa ${selection.villaTotal.toLocaleString(
+          "fr-FR"
+        )} € + voiture ${selection.carTotal.toLocaleString("fr-FR")} €)`
+      : "";
     setForm((f) => ({
       ...f,
       dateArrivee: selection.checkIn,
@@ -43,9 +51,9 @@ export default function ContactSection() {
           selection.checkIn
         )} au ${frDate(selection.checkOut)} (${selection.nights} nuit${
           selection.nights > 1 ? "s" : ""
-        }). Tarif indicatif estimé : ~${selection.total.toLocaleString(
+        })${carPart}. Tarif indicatif estimé : ~${selection.total.toLocaleString(
           "fr-FR"
-        )} €. Merci de me confirmer la disponibilité et le tarif exact.`,
+        )} €${breakdown}. Merci de me confirmer la disponibilité et le tarif exact.`,
     }));
   }, [selection]);
 
@@ -176,6 +184,9 @@ export default function ContactSection() {
                   <span className="text-gray-500">
                     ({selection.nights} nuit{selection.nights > 1 ? "s" : ""})
                   </span>
+                  {selection.withCar && (
+                    <span className="text-gray-500"> · 🚗 voiture</span>
+                  )}
                 </span>
                 <span className="font-playfair text-lg text-sea-blue whitespace-nowrap">
                   ~{selection.total.toLocaleString("fr-FR")} €
