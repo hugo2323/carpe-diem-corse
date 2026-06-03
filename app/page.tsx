@@ -6,6 +6,7 @@ import GalleryPreview from "./components/GalleryPreview";
 import AvailabilitySection from "./components/AvailabilitySection";
 import PricingCTA from "./components/PricingCTA";
 import CarSection from "./components/CarSection";
+import ReviewsSection from "./components/ReviewsSection";
 import ContactSection from "./components/ContactSection";
 import Footer from "./components/Footer";
 import { BookingProvider } from "./components/BookingProvider";
@@ -22,6 +23,7 @@ export default function Home() {
         <AvailabilitySection />
         <PricingCTA />
         <CarSection />
+        <ReviewsSection />
         <ContactSection />
       </BookingProvider>
       <Footer />
