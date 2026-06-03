@@ -79,7 +79,7 @@ export default function AvailabilityCalendar() {
     });
   };
 
-  const configured = data?.sources.some((s) => s.configured) ?? false;
+  const syncedNames = data?.sources.filter((s) => s.ok).map((s) => s.name) ?? [];
   const syncError = data?.sources.some((s) => s.configured && !s.ok) ?? false;
 
   return (
@@ -165,11 +165,13 @@ export default function AvailabilityCalendar() {
 
       {/* État de la synchro */}
       <p className="text-center font-lato text-xs text-gray-400 mt-4">
-        {failed || syncError
+        {failed
           ? "Disponibilités indicatives — synchronisation momentanément indisponible."
-          : !configured
-          ? "Calendrier en cours de configuration."
-          : "Synchronisé avec Airbnb et Abritel — mis à jour automatiquement."}
+          : syncedNames.length > 0
+          ? `Synchronisé avec ${syncedNames.join(" et ")} — mis à jour automatiquement.`
+          : syncError
+          ? "Disponibilités indicatives — synchronisation momentanément indisponible."
+          : "Calendrier en cours de configuration."}
       </p>
     </div>
   );
