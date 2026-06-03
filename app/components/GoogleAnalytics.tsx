@@ -24,6 +24,7 @@ export default function GoogleAnalytics() {
           function gtag(){dataLayer.push(arguments);}
           gtag('js', new Date());
           gtag('config', '${gaId}');
+          gtag('config', 'AW-17885406874');
         `}
       </Script>
     </>
