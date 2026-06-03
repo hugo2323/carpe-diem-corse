@@ -8,6 +8,7 @@ import PricingCTA from "./components/PricingCTA";
 import CarSection from "./components/CarSection";
 import ContactSection from "./components/ContactSection";
 import Footer from "./components/Footer";
+import { BookingProvider } from "./components/BookingProvider";
 
 export default function Home() {
   return (
@@ -17,10 +18,12 @@ export default function Home() {
       <HighlightsSection />
       <VillaSection />
       <GalleryPreview />
-      <AvailabilitySection />
-      <PricingCTA />
-      <CarSection />
-      <ContactSection />
+      <BookingProvider>
+        <AvailabilitySection />
+        <PricingCTA />
+        <CarSection />
+        <ContactSection />
+      </BookingProvider>
       <Footer />
     </main>
   );

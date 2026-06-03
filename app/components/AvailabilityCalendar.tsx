@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { quote } from "@/lib/pricing";
+import { useBooking } from "./BookingProvider";
 
 type SourceStatus = { name: string; configured: boolean; ok: boolean };
 type Availability = { blocked: string[]; sources: SourceStatus[] };
@@ -11,25 +13,50 @@ const MONTHS_FR = [
 ];
 const WEEKDAYS_FR = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
 
-// Nombre de mois consultables vers le futur depuis le mois courant.
 const MAX_MONTHS_AHEAD = 12;
 
 function ymd(y: number, m: number, d: number): string {
   return `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
 }
 
-// Index du mois (année*12 + mois) pour comparer/borner facilement.
 function monthIndex(y: number, m: number): number {
   return y * 12 + m;
 }
 
+function frDate(iso: string): string {
+  const [y, m, d] = iso.split("-");
+  return `${d}/${m}/${y}`;
+}
+
+// Y a-t-il au moins une nuit réservée dans la plage [checkIn, checkOut[ ?
+function rangeHasBlocked(
+  checkIn: string,
+  checkOut: string,
+  blocked: Set<string>
+): boolean {
+  const end = new Date(`${checkOut}T00:00:00Z`);
+  for (
+    let d = new Date(`${checkIn}T00:00:00Z`);
+    d < end;
+    d.setUTCDate(d.getUTCDate() + 1)
+  ) {
+    if (blocked.has(d.toISOString().slice(0, 10))) return true;
+  }
+  return false;
+}
+
 export default function AvailabilityCalendar() {
+  const { setSelection } = useBooking();
+
   const [data, setData] = useState<Availability | null>(null);
   const [failed, setFailed] = useState(false);
-  // Calculés côté client (dans l'effet) pour éviter tout décalage d'hydratation.
   const [cursor, setCursor] = useState<{ y: number; m: number } | null>(null);
   const [today, setToday] = useState<string | null>(null);
   const [minMonth, setMinMonth] = useState<number | null>(null);
+
+  // Sélection de séjour
+  const [checkIn, setCheckIn] = useState<string | null>(null);
+  const [checkOut, setCheckOut] = useState<string | null>(null);
 
   useEffect(() => {
     const now = new Date();
@@ -49,7 +76,6 @@ export default function AvailabilityCalendar() {
     if (!cursor) return [];
     const { y, m } = cursor;
     const daysInMonth = new Date(y, m + 1, 0).getDate();
-    // getDay(): 0=Dim..6=Sam -> on passe en semaine commençant le lundi.
     const firstWeekday = (new Date(y, m, 1).getDay() + 6) % 7;
 
     const out: ({ day: number; date: string } | null)[] = [];
@@ -59,6 +85,11 @@ export default function AvailabilityCalendar() {
     }
     return out;
   }, [cursor]);
+
+  const currentQuote = useMemo(
+    () => (checkIn && checkOut ? quote(checkIn, checkOut) : null),
+    [checkIn, checkOut]
+  );
 
   if (!cursor || !today || minMonth === null) {
     return (
@@ -77,6 +108,59 @@ export default function AvailabilityCalendar() {
       if (idx < minMonth || idx > minMonth + MAX_MONTHS_AHEAD) return c;
       return { y: Math.floor(idx / 12), m: idx % 12 };
     });
+  };
+
+  const handleDayClick = (date: string, isPast: boolean, isBlocked: boolean) => {
+    if (isPast) return;
+
+    const selecting = checkIn && !checkOut;
+
+    // Démarrage d'une nouvelle sélection -> doit être une nuit disponible.
+    if (!selecting) {
+      if (isBlocked) return;
+      setCheckIn(date);
+      setCheckOut(null);
+      return;
+    }
+
+    // On complète la sélection (checkIn déjà posé).
+    // Clic sur une date <= arrivée : on redémarre depuis cette date.
+    if (date <= checkIn!) {
+      if (!isBlocked) {
+        setCheckIn(date);
+        setCheckOut(null);
+      }
+      return;
+    }
+
+    // La plage [checkIn, date[ ne doit contenir aucune nuit réservée.
+    if (rangeHasBlocked(checkIn!, date, blocked)) {
+      if (!isBlocked) {
+        setCheckIn(date);
+        setCheckOut(null);
+      }
+      return;
+    }
+
+    // Valide : `date` devient le jour de départ (peut être un jour d'arrivée
+    // d'un autre séjour, donc autorisé même s'il est "réservé").
+    setCheckOut(date);
+  };
+
+  const resetSelection = () => {
+    setCheckIn(null);
+    setCheckOut(null);
+  };
+
+  const confirmSelection = () => {
+    if (!checkIn || !checkOut || !currentQuote) return;
+    setSelection({
+      checkIn,
+      checkOut,
+      nights: currentQuote.nights,
+      total: currentQuote.total,
+    });
+    document.getElementById("reserver")?.scrollIntoView({ behavior: "smooth" });
   };
 
   const syncedNames = data?.sources.filter((s) => s.ok).map((s) => s.name) ?? [];
@@ -124,38 +208,68 @@ export default function AvailabilityCalendar() {
           if (!cell) return <div key={`empty-${i}`} />;
           const isPast = cell.date < today;
           const isBlocked = blocked.has(cell.date);
+          const isCheckIn = cell.date === checkIn;
+          const isCheckOut = cell.date === checkOut;
+          const isInRange =
+            !!checkIn &&
+            !!checkOut &&
+            cell.date > checkIn &&
+            cell.date < checkOut;
+          const isEndpoint = isCheckIn || isCheckOut;
           const isAvailable = !isPast && !isBlocked;
+          const clickable = !isPast && (!isBlocked || (!!checkIn && !checkOut));
+
+          let cls: string;
+          if (isEndpoint) {
+            cls = "bg-gold text-white font-bold ring-2 ring-gold";
+          } else if (isInRange) {
+            cls = "bg-gold/20 text-sea-blue font-semibold";
+          } else if (isPast) {
+            cls = "text-gray-300";
+          } else if (isBlocked) {
+            cls = "bg-gray-100 text-gray-400 line-through";
+          } else {
+            cls = "bg-gold/10 text-sea-blue font-semibold ring-1 ring-gold/30 hover:bg-gold/25";
+          }
 
           return (
-            <div
+            <button
+              type="button"
               key={cell.date}
+              onClick={() => handleDayClick(cell.date, isPast, isBlocked)}
+              disabled={!clickable}
               className={[
                 "aspect-square flex items-center justify-center rounded-lg font-lato text-sm transition-colors",
-                isPast
-                  ? "text-gray-300"
-                  : isBlocked
-                  ? "bg-gray-100 text-gray-400 line-through"
-                  : "bg-gold/10 text-sea-blue font-semibold ring-1 ring-gold/30",
+                clickable ? "cursor-pointer" : "cursor-default",
+                cls,
               ].join(" ")}
               title={
                 isPast
                   ? undefined
+                  : isEndpoint
+                  ? isCheckIn
+                    ? "Arrivée"
+                    : "Départ"
                   : isAvailable
-                  ? "Disponible"
+                  ? "Disponible — cliquez pour sélectionner"
                   : "Réservé"
               }
             >
               {cell.day}
-            </div>
+            </button>
           );
         })}
       </div>
 
       {/* Légende */}
-      <div className="flex items-center justify-center gap-6 mt-6 font-lato text-sm text-gray-600">
+      <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 mt-6 font-lato text-sm text-gray-600">
         <span className="flex items-center gap-2">
           <span className="w-4 h-4 rounded bg-gold/10 ring-1 ring-gold/30 inline-block" />
           Disponible
+        </span>
+        <span className="flex items-center gap-2">
+          <span className="w-4 h-4 rounded bg-gold inline-block" />
+          Vos dates
         </span>
         <span className="flex items-center gap-2">
           <span className="w-4 h-4 rounded bg-gray-100 inline-block" />
@@ -163,8 +277,72 @@ export default function AvailabilityCalendar() {
         </span>
       </div>
 
+      {/* Panneau de sélection / devis indicatif */}
+      <div className="mt-6 min-h-[1px]">
+        {!checkIn && (
+          <p className="text-center font-lato text-sm text-gray-500">
+            👆 Cliquez sur une date d&apos;arrivée puis une date de départ pour
+            estimer votre séjour.
+          </p>
+        )}
+
+        {checkIn && !checkOut && (
+          <p className="text-center font-lato text-sm text-sea-blue">
+            Arrivée le <strong>{frDate(checkIn)}</strong> — sélectionnez
+            maintenant votre date de départ.
+          </p>
+        )}
+
+        {checkIn && checkOut && currentQuote && (
+          <div className="bg-cream rounded-2xl p-6 border border-gold/20">
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <div>
+                <p className="font-lato text-sm text-gray-600">
+                  Du <strong className="text-sea-blue">{frDate(checkIn)}</strong>{" "}
+                  au <strong className="text-sea-blue">{frDate(checkOut)}</strong>
+                </p>
+                <p className="font-lato text-xs text-gray-500 mt-1">
+                  {currentQuote.nights} nuit{currentQuote.nights > 1 ? "s" : ""} ·
+                  ~{currentQuote.avgPerNight} €/nuit
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="font-playfair text-3xl text-sea-blue">
+                  ~{currentQuote.total.toLocaleString("fr-FR")} €
+                </p>
+                <p className="font-lato text-[11px] text-gray-500 uppercase tracking-wider">
+                  Tarif indicatif
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-5">
+              <button
+                type="button"
+                onClick={confirmSelection}
+                className="flex-1 bg-gold hover:bg-gold-light text-white py-3 rounded-lg font-lato font-bold tracking-wider uppercase text-sm transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-0.5"
+              >
+                Demander ces dates
+              </button>
+              <button
+                type="button"
+                onClick={resetSelection}
+                className="px-5 py-3 rounded-lg font-lato text-sm text-gray-500 hover:text-sea-blue border border-gray-200 hover:border-sea-blue transition-colors"
+              >
+                Effacer
+              </button>
+            </div>
+
+            <p className="font-lato text-[11px] text-gray-400 mt-3 text-center">
+              Tarif estimatif hors frais de ménage et taxe de séjour — le tarif
+              exact vous est confirmé sous 24h.
+            </p>
+          </div>
+        )}
+      </div>
+
       {/* État de la synchro */}
-      <p className="text-center font-lato text-xs text-gray-400 mt-4">
+      <p className="text-center font-lato text-xs text-gray-400 mt-5">
         {failed
           ? "Disponibilités indicatives — synchronisation momentanément indisponible."
           : syncedNames.length > 0

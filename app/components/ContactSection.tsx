@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useBooking } from "./BookingProvider";
 
 // Clé Web3Forms (publique par conception) — obtenue gratuitement sur
 // https://web3forms.com en entrant l'adresse de réception.
@@ -9,6 +10,11 @@ const WEB3FORMS_ACCESS_KEY =
   "5d2024a2-f384-4502-9b1b-57e56fb1947c";
 
 type Status = "idle" | "sending" | "success" | "error";
+
+function frDate(iso: string): string {
+  const [y, m, d] = iso.split("-");
+  return d && m && y ? `${d}/${m}/${y}` : iso;
+}
 
 export default function ContactSection() {
   const [form, setForm] = useState({
@@ -21,6 +27,27 @@ export default function ContactSection() {
     message: "",
   });
   const [status, setStatus] = useState<Status>("idle");
+  const { selection } = useBooking();
+
+  // Pré-remplit le formulaire quand le visiteur sélectionne des dates dans le
+  // calendrier de disponibilités (bouton « Demander ces dates »).
+  useEffect(() => {
+    if (!selection) return;
+    setForm((f) => ({
+      ...f,
+      dateArrivee: selection.checkIn,
+      dateDepart: selection.checkOut,
+      message:
+        f.message ||
+        `Bonjour, je suis intéressé(e) par un séjour du ${frDate(
+          selection.checkIn
+        )} au ${frDate(selection.checkOut)} (${selection.nights} nuit${
+          selection.nights > 1 ? "s" : ""
+        }). Tarif indicatif estimé : ~${selection.total.toLocaleString(
+          "fr-FR"
+        )} €. Merci de me confirmer la disponibilité et le tarif exact.`,
+    }));
+  }, [selection]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -141,6 +168,20 @@ export default function ContactSection() {
             <h3 className="font-playfair text-2xl text-sea-blue mb-6 font-semibold">
               Demande de réservation
             </h3>
+
+            {selection && status !== "success" && (
+              <div className="mb-6 bg-cream rounded-xl px-4 py-3 border border-gold/20 flex items-center justify-between gap-3">
+                <span className="font-lato text-sm text-sea-blue">
+                  📅 {frDate(selection.checkIn)} → {frDate(selection.checkOut)}{" "}
+                  <span className="text-gray-500">
+                    ({selection.nights} nuit{selection.nights > 1 ? "s" : ""})
+                  </span>
+                </span>
+                <span className="font-playfair text-lg text-sea-blue whitespace-nowrap">
+                  ~{selection.total.toLocaleString("fr-FR")} €
+                </span>
+              </div>
+            )}
 
             {status === "success" ? (
               <div className="text-center py-12">
