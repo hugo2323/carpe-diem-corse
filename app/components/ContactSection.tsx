@@ -38,14 +38,24 @@ export default function ContactSection() {
   // calendrier de disponibilités (bouton « Demander ces dates »).
   useEffect(() => {
     if (!selection) return;
+    const villaLine = `Tarif villa indicatif : ~${selection.villaTotal.toLocaleString(
+      "fr-FR"
+    )} €`;
+    const vehicleLine = selection.withCar
+      ? `, véhicule Dacia Bigster ~${(selection.carTotal ?? 0).toLocaleString(
+          "fr-FR"
+        )} € (sous réserve de disponibilité)`
+      : "";
+    const totalLine =
+      selection.withCar && selection.total !== selection.villaTotal
+        ? ` Total indicatif : ~${selection.total.toLocaleString("fr-FR")} €.`
+        : ".";
     const remises: string[] = [];
-    if (selection.lastMinuteSaved > 0) remises.push("dernière minute (dégressive)");
-    if (selection.withCar) remises.push("pack véhicule −5%");
+    if (selection.lastMinuteSaved > 0)
+      remises.push("dernière minute dégressive");
+    if (selection.vehicleSaved > 0) remises.push("−5% pack véhicule sur la villa");
     const discountPart = remises.length
       ? ` Remises incluses : ${remises.join(" et ")}.`
-      : "";
-    const vehiclePart = selection.withCar
-      ? " Je souhaite ajouter le véhicule au séjour (sur demande, sous réserve de disponibilité)."
       : "";
     setForm((f) => ({
       ...f,
@@ -57,9 +67,7 @@ export default function ContactSection() {
           selection.checkIn
         )} au ${frDate(selection.checkOut)} (${selection.nights} nuit${
           selection.nights > 1 ? "s" : ""
-        }). Tarif villa indicatif : ~${selection.total.toLocaleString(
-          "fr-FR"
-        )} €.${discountPart}${vehiclePart} Merci de me confirmer la disponibilité et le tarif exact.`,
+        }). ${villaLine}${vehicleLine}${totalLine}${discountPart} Merci de me confirmer la disponibilité et le tarif exact.`,
     }));
   }, [selection]);
 
@@ -207,7 +215,7 @@ export default function ContactSection() {
                       ({selection.nights} nuit{selection.nights > 1 ? "s" : ""})
                     </span>
                     {selection.withCar && (
-                      <span className="text-gray-500"> · véhicule (sur demande)</span>
+                      <span className="text-gray-500"> · véhicule Dacia Bigster</span>
                     )}
                   </span>
                 </span>

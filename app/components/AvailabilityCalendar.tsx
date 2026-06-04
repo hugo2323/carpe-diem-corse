@@ -460,21 +460,28 @@ export default function AvailabilityCalendar() {
                   </p>
                   {withCar && (
                     <p className="font-lato text-xs text-gray-500 mt-2">
-                      Véhicule (Dacia Bigster) —{" "}
-                      <span className="text-sea-blue font-semibold">
-                        sur demande
-                      </span>
-                      . Sous réserve de disponibilité du véhicule.
+                      Véhicule ajouté au séjour. Sous réserve de disponibilité du
+                      véhicule.
                     </p>
                   )}
                 </div>
               </div>
             </label>
 
+            {/* Ligne véhicule (payant, ajouté au total) */}
+            {withCar && currentQuote.carTotal != null && (
+              <div className="flex items-center justify-between mt-3 font-lato text-sm">
+                <span className="text-gray-700">Véhicule (Dacia Bigster)</span>
+                <span className="text-sea-blue font-semibold">
+                  +{currentQuote.carTotal.toLocaleString("fr-FR")} €
+                </span>
+              </div>
+            )}
+
             {/* Total */}
             <div className="flex items-end justify-between mt-4 pt-4 border-t border-gold/20">
               <span className="font-lato text-sm text-gray-600">
-                Tarif villa
+                Total {withCar ? "séjour" : "villa"}
               </span>
               <span className="text-right">
                 <span className="font-playfair text-3xl text-sea-blue block leading-none">

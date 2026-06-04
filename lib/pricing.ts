@@ -18,7 +18,7 @@ const VILLA: RateSet = { veryHigh: 450, high: 320, mid: 220, low: 160 };
 // Tarif véhicule par nuit — utilisé seulement si VEHICLE_PRICING_MODE="dynamic".
 const CAR: RateSet = { veryHigh: 80, high: 70, mid: 60, low: 50 };
 
-export const VEHICLE_PRICING_MODE: "on_request" | "dynamic" = "on_request";
+export const VEHICLE_PRICING_MODE: "on_request" | "dynamic" = "dynamic";
 
 // Remise accordée sur la base villa quand le véhicule est ajouté au séjour.
 export const VEHICLE_PACK_DISCOUNT_PCT = 5;
@@ -51,11 +51,12 @@ function rateForDate(set: RateSet, isoDate: string): number {
 }
 
 // --- Remise dernière minute dégressive, par NUIT ---
-// Paliers par semaine de proximité (en jours d'écart entre la nuit et aujourd'hui).
+// Paliers par semaine de proximité, comptés à partir de la 1ʳᵉ nuit réservable
+// (demain = J+1). Semaine 1 = J+1→7, semaine 2 = J+8→14, semaine 3 = J+15→21.
 const NIGHT_DISCOUNT_TIERS = [
-  { maxDays: 6, pct: 30 }, // semaine 1
-  { maxDays: 13, pct: 20 }, // semaine 2
-  { maxDays: 20, pct: 10 }, // semaine 3
+  { maxDays: 7, pct: 30 }, // semaine 1 (J+1 → J+7)
+  { maxDays: 14, pct: 20 }, // semaine 2 (J+8 → J+14)
+  { maxDays: 21, pct: 10 }, // semaine 3 (J+15 → J+21)
 ];
 
 function daysBetween(fromIso: string, toIso: string): number {
