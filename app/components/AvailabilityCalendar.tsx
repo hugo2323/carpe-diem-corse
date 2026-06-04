@@ -439,6 +439,31 @@ export default function AvailabilityCalendar() {
               )}
             </div>
 
+            {/* Ligne véhicule (payant, ajouté au total) */}
+            {withCar && currentQuote.carTotal != null && (
+              <div className="flex items-center justify-between mt-3 font-lato text-sm">
+                <span className="text-gray-700">Véhicule (Dacia Bigster)</span>
+                <span className="text-sea-blue font-semibold">
+                  +{currentQuote.carTotal.toLocaleString("fr-FR")} €
+                </span>
+              </div>
+            )}
+
+            {/* Total */}
+            <div className="flex items-end justify-between mt-4 pt-4 border-t border-gold/20">
+              <span className="font-lato text-sm text-gray-600">
+                Total {withCar ? "séjour" : "villa"}
+              </span>
+              <span className="text-right">
+                <span className="font-playfair text-3xl text-sea-blue block leading-none">
+                  ~{currentQuote.total.toLocaleString("fr-FR")} €
+                </span>
+                <span className="font-lato text-[11px] text-gray-500 uppercase tracking-wider">
+                  Tarif indicatif
+                </span>
+              </span>
+            </div>
+
             {/* Option véhicule — carte discrète */}
             <label className="block mt-4 rounded-xl border border-gold/30 bg-white p-4 cursor-pointer select-none">
               <div className="flex items-start gap-3">
@@ -467,31 +492,6 @@ export default function AvailabilityCalendar() {
                 </div>
               </div>
             </label>
-
-            {/* Ligne véhicule (payant, ajouté au total) */}
-            {withCar && currentQuote.carTotal != null && (
-              <div className="flex items-center justify-between mt-3 font-lato text-sm">
-                <span className="text-gray-700">Véhicule (Dacia Bigster)</span>
-                <span className="text-sea-blue font-semibold">
-                  +{currentQuote.carTotal.toLocaleString("fr-FR")} €
-                </span>
-              </div>
-            )}
-
-            {/* Total */}
-            <div className="flex items-end justify-between mt-4 pt-4 border-t border-gold/20">
-              <span className="font-lato text-sm text-gray-600">
-                Total {withCar ? "séjour" : "villa"}
-              </span>
-              <span className="text-right">
-                <span className="font-playfair text-3xl text-sea-blue block leading-none">
-                  ~{currentQuote.total.toLocaleString("fr-FR")} €
-                </span>
-                <span className="font-lato text-[11px] text-gray-500 uppercase tracking-wider">
-                  Tarif indicatif
-                </span>
-              </span>
-            </div>
 
             <div className="flex gap-3 mt-5">
               <button
