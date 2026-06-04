@@ -240,7 +240,7 @@ export default function AvailabilityCalendar() {
     // Séjour minimum (variable selon la saison) — SAUF si le créneau libre qui
     // contient l'arrivée est lui-même plus court que ce minimum : on autorise
     // alors n'importe quel séjour à l'intérieur (pour ne pas perdre ces nuits).
-    const min = minNightsForDate(checkIn!);
+    const min = minNightsForDate(checkIn!, today);
     if (
       nightsBetween(checkIn!, date) < min &&
       gapLengthAround(checkIn!, minDate) >= min
@@ -472,7 +472,7 @@ export default function AvailabilityCalendar() {
             maintenant votre date de départ.
             {shortStay && (
               <span className="block text-gold font-semibold mt-1">
-                Séjour minimum {minNightsForDate(checkIn)} nuits sur cette période.
+                Séjour minimum {minNightsForDate(checkIn, today)} nuits sur cette période.
               </span>
             )}
           </p>

@@ -56,7 +56,11 @@ const MIN_STAY_PERIODS = [
   { from: "06-01", to: "07-13", nights: 5 }, // haute
   { from: "08-25", to: "09-15", nights: 5 }, // haute
 ];
-export function minNightsForDate(checkInIso: string): number {
+export function minNightsForDate(checkInIso: string, todayIso?: string): number {
+  // Mois en cours : aucun minimum (flexibilité maximale pour le dernier moment).
+  if (todayIso && checkInIso.slice(0, 7) === todayIso.slice(0, 7)) {
+    return DEFAULT_MIN_NIGHTS;
+  }
   const md = checkInIso.slice(5);
   for (const p of MIN_STAY_PERIODS) if (md >= p.from && md <= p.to) return p.nights;
   return DEFAULT_MIN_NIGHTS;
