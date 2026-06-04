@@ -130,6 +130,59 @@ export default function AvailabilityCalendar() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [checkIn, checkOut, withCar, today, minDate, blocked]);
 
+  // Créneaux orphelins (1-9 nuits) coincés ENTRE deux réservations → offres
+  // spéciales à tarif réduit, avec et sans véhicule.
+  const deals = useMemo(() => {
+    if (!today || !minDate) return [];
+    const horizon = addDaysIso(minDate, 365);
+
+    // Repère les suites de nuits libres.
+    const runs: { start: string; end: string }[] = [];
+    let runStart: string | null = null;
+    for (let d = minDate; d < horizon; d = addDaysIso(d, 1)) {
+      if (!blocked.has(d)) {
+        if (runStart === null) runStart = d;
+      } else if (runStart !== null) {
+        runs.push({ start: runStart, end: addDaysIso(d, -1) });
+        runStart = null;
+      }
+    }
+
+    const out: {
+      checkIn: string;
+      checkOut: string;
+      nights: number;
+      pct: number;
+      villaTotal: number;
+      totalWithCar: number | null;
+    }[] = [];
+
+    for (const r of runs) {
+      const nights = nightsBetween(r.start, r.end) + 1;
+      if (nights < 1 || nights > 9) continue;
+      // Mur de réservation des deux côtés (vrai trou entre 2 séjours).
+      if (!blocked.has(addDaysIso(r.start, -1))) continue;
+      if (!blocked.has(addDaysIso(r.end, 1))) continue;
+
+      const checkIn = r.start;
+      const checkOut = addDaysIso(r.end, 1);
+      const pct = gapDiscountPctForNights(nights);
+      const q = quote(checkIn, checkOut, false, today, pct);
+      const qc = quote(checkIn, checkOut, true, today, pct);
+      if (!q) continue;
+      out.push({
+        checkIn,
+        checkOut,
+        nights,
+        pct,
+        villaTotal: q.villaTotal,
+        totalWithCar: qc ? qc.total : null,
+      });
+    }
+    return out.slice(0, 6);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [blocked, today, minDate]);
+
   if (!cursor || !today || !minDate || minMonth === null) {
     return (
       <div className="max-w-3xl mx-auto h-80 rounded-2xl bg-gray-100 animate-pulse" />
@@ -224,6 +277,17 @@ export default function AvailabilityCalendar() {
       total: currentQuote.total,
     });
     document.getElementById("reserver")?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  // Sélectionne une offre spéciale (créneau) dans le calendrier et y remonte.
+  const selectDeal = (deal: { checkIn: string; checkOut: string }) => {
+    setWithCar(false);
+    setShortStay(false);
+    setCheckIn(deal.checkIn);
+    setCheckOut(deal.checkOut);
+    document
+      .getElementById("disponibilites")
+      ?.scrollIntoView({ behavior: "smooth" });
   };
 
   // --- Rendu d'une cellule jour ---
@@ -578,6 +642,71 @@ export default function AvailabilityCalendar() {
           </div>
         )}
       </div>
+
+      {/* Offres spéciales : créneaux orphelins à tarif réduit */}
+      {deals.length > 0 && (
+        <div className="mt-12 pt-8 border-t border-gold/15">
+          <div className="text-center mb-6">
+            <p className="font-lato text-[11px] uppercase tracking-[0.25em] text-gold mb-1">
+              Offres spéciales
+            </p>
+            <h3 className="font-playfair text-2xl text-sea-blue">
+              Dernières dates à saisir
+            </h3>
+            <p className="font-lato text-sm text-gray-500 mt-1">
+              Des dates idéales à tarif réduit — disponibilités limitées.
+            </p>
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-4">
+            {deals.map((deal) => (
+              <button
+                type="button"
+                key={deal.checkIn}
+                onClick={() => selectDeal(deal)}
+                className="text-left rounded-2xl border border-gold/30 bg-white p-5 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-lato text-sm font-semibold text-sea-blue">
+                    {frDate(deal.checkIn)} → {frDate(deal.checkOut)}
+                  </span>
+                  <span className="bg-gold text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full">
+                    −{deal.pct}%
+                  </span>
+                </div>
+                <p className="font-lato text-xs text-gray-500 mb-4">
+                  {deal.nights} nuit{deal.nights > 1 ? "s" : ""}
+                </p>
+
+                <div className="flex items-end justify-between gap-4">
+                  <div>
+                    <p className="font-lato text-[11px] text-gray-400 uppercase tracking-wider">
+                      Villa
+                    </p>
+                    <p className="font-playfair text-2xl text-sea-blue leading-none">
+                      ~{deal.villaTotal.toLocaleString("fr-FR")} €
+                    </p>
+                  </div>
+                  {deal.totalWithCar != null && (
+                    <div className="text-right">
+                      <p className="font-lato text-[11px] text-gray-400 uppercase tracking-wider">
+                        Avec véhicule
+                      </p>
+                      <p className="font-playfair text-lg text-sea-blue leading-none">
+                        ~{deal.totalWithCar.toLocaleString("fr-FR")} €
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <span className="block mt-4 text-center text-xs font-lato font-bold uppercase tracking-wider text-gold">
+                  Demander ces dates →
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* État de la synchro */}
       <p className="text-center font-lato text-xs text-gray-400 mt-5">
