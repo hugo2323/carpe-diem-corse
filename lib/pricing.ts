@@ -23,6 +23,10 @@ export const VEHICLE_PRICING_MODE: "on_request" | "dynamic" = "on_request";
 // Remise accordée sur la base villa quand le véhicule est ajouté au séjour.
 export const VEHICLE_PACK_DISCOUNT_PCT = 5;
 
+// Règles de réservation.
+export const MIN_NIGHTS = 3; // durée minimale d'un séjour
+export const MIN_LEAD_DAYS = 1; // délai minimum avant l'arrivée (pas le jour même)
+
 type Tier = keyof RateSet;
 type Period = { from: string; to: string; tier: Tier };
 
@@ -49,7 +53,7 @@ function rateForDate(set: RateSet, isoDate: string): number {
 // --- Remise dernière minute dégressive, par NUIT ---
 // Paliers par semaine de proximité (en jours d'écart entre la nuit et aujourd'hui).
 const NIGHT_DISCOUNT_TIERS = [
-  { maxDays: 6, pct: 40 }, // semaine 1
+  { maxDays: 6, pct: 30 }, // semaine 1
   { maxDays: 13, pct: 20 }, // semaine 2
   { maxDays: 20, pct: 10 }, // semaine 3
 ];

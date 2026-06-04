@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { quote } from "@/lib/pricing";
+import { quote, MIN_NIGHTS, MIN_LEAD_DAYS } from "@/lib/pricing";
 import { useBooking } from "./BookingProvider";
 import Icon from "./Icon";
 
@@ -29,6 +29,18 @@ function frDate(iso: string): string {
   return `${d}/${m}/${y}`;
 }
 
+function addDaysIso(iso: string, days: number): string {
+  const d = new Date(`${iso}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+function nightsBetween(a: string, b: string): number {
+  return Math.round(
+    (Date.parse(`${b}T00:00:00Z`) - Date.parse(`${a}T00:00:00Z`)) / 86400000
+  );
+}
+
 // Y a-t-il au moins une nuit réservée dans la plage [checkIn, checkOut[ ?
 function rangeHasBlocked(
   checkIn: string,
@@ -53,18 +65,22 @@ export default function AvailabilityCalendar() {
   const [failed, setFailed] = useState(false);
   const [cursor, setCursor] = useState<{ y: number; m: number } | null>(null);
   const [today, setToday] = useState<string | null>(null);
+  const [minDate, setMinDate] = useState<string | null>(null); // 1ʳᵉ date réservable
   const [minMonth, setMinMonth] = useState<number | null>(null);
 
   // Sélection de séjour
   const [checkIn, setCheckIn] = useState<string | null>(null);
   const [checkOut, setCheckOut] = useState<string | null>(null);
   const [withCar, setWithCar] = useState(false);
+  const [shortStay, setShortStay] = useState(false); // tentative < séjour mini
 
   useEffect(() => {
     const now = new Date();
     setCursor({ y: now.getFullYear(), m: now.getMonth() });
     setMinMonth(monthIndex(now.getFullYear(), now.getMonth()));
-    setToday(ymd(now.getFullYear(), now.getMonth(), now.getDate()));
+    const todayStr = ymd(now.getFullYear(), now.getMonth(), now.getDate());
+    setToday(todayStr);
+    setMinDate(addDaysIso(todayStr, MIN_LEAD_DAYS));
 
     fetch("/api/availability")
       .then((r) => (r.ok ? r.json() : Promise.reject()))
@@ -82,7 +98,7 @@ export default function AvailabilityCalendar() {
     [checkIn, checkOut, withCar, today]
   );
 
-  if (!cursor || !today || minMonth === null) {
+  if (!cursor || !today || !minDate || minMonth === null) {
     return (
       <div className="max-w-3xl mx-auto h-80 rounded-2xl bg-gray-100 animate-pulse" />
     );
@@ -109,6 +125,7 @@ export default function AvailabilityCalendar() {
     // Démarrage d'une nouvelle sélection -> doit être une nuit disponible.
     if (!selecting) {
       if (isBlocked) return;
+      setShortStay(false);
       setCheckIn(date);
       setCheckOut(null);
       return;
@@ -117,6 +134,7 @@ export default function AvailabilityCalendar() {
     // Clic sur une date <= arrivée : on redémarre depuis cette date.
     if (date <= checkIn!) {
       if (!isBlocked) {
+        setShortStay(false);
         setCheckIn(date);
         setCheckOut(null);
       }
@@ -126,13 +144,21 @@ export default function AvailabilityCalendar() {
     // La plage [checkIn, date[ ne doit contenir aucune nuit réservée.
     if (rangeHasBlocked(checkIn!, date, blocked)) {
       if (!isBlocked) {
+        setShortStay(false);
         setCheckIn(date);
         setCheckOut(null);
       }
       return;
     }
 
+    // Séjour minimum : on refuse un départ trop proche de l'arrivée.
+    if (nightsBetween(checkIn!, date) < MIN_NIGHTS) {
+      setShortStay(true);
+      return;
+    }
+
     // Valide : `date` devient le jour de départ.
+    setShortStay(false);
     setCheckOut(date);
   };
 
@@ -140,6 +166,7 @@ export default function AvailabilityCalendar() {
     setCheckIn(null);
     setCheckOut(null);
     setWithCar(false);
+    setShortStay(false);
   };
 
   const confirmSelection = () => {
@@ -162,7 +189,8 @@ export default function AvailabilityCalendar() {
 
   // --- Rendu d'une cellule jour ---
   const renderCell = (date: string, day: number) => {
-    const isPast = date < today;
+    // Avant la 1ʳᵉ date réservable (today + délai mini) -> non sélectionnable.
+    const isPast = date < minDate;
     const isBlocked = blocked.has(date);
     const isCheckIn = date === checkIn;
     const isCheckOut = date === checkOut;
@@ -261,7 +289,7 @@ export default function AvailabilityCalendar() {
         </p>
         <div className="flex flex-wrap items-center justify-center gap-2">
           <span className="rounded-full border border-gold/50 bg-gold/5 text-sea-blue text-xs font-semibold px-3.5 py-1.5">
-            −40% · semaine 1
+            −30% · semaine 1
           </span>
           <span className="rounded-full border border-gold/30 bg-gold/5 text-sea-blue text-xs font-semibold px-3.5 py-1.5">
             −20% · semaine 2
@@ -324,7 +352,10 @@ export default function AvailabilityCalendar() {
         {!checkIn && (
           <p className="text-center font-lato text-sm text-gray-500">
             Cliquez sur une date d&apos;arrivée puis une date de départ pour
-            estimer votre séjour.
+            estimer votre séjour.{" "}
+            <span className="text-gray-400">
+              Séjour minimum {MIN_NIGHTS} nuits.
+            </span>
           </p>
         )}
 
@@ -332,6 +363,12 @@ export default function AvailabilityCalendar() {
           <p className="text-center font-lato text-sm text-sea-blue">
             Arrivée le <strong>{frDate(checkIn)}</strong> — sélectionnez
             maintenant votre date de départ.
+            {shortStay && (
+              <span className="block text-gold font-semibold mt-1">
+                Séjour minimum {MIN_NIGHTS} nuits — choisissez une date de départ
+                plus tardive.
+              </span>
+            )}
           </p>
         )}
 
