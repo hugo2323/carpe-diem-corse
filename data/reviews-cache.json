@@ -1,0 +1,11 @@
+{
+  "_comment": "Cache des avis récupérés dynamiquement (V2). Généré par un job serveur via fetchAirbnbReviews(), jamais à la main. Vide tant qu'aucune intégration dynamique n'est branchée. Le site n'affiche que les avis is_verified=true.",
+  "airbnb": {
+    "reviews": [],
+    "fetched_at": null
+  },
+  "turo": {
+    "reviews": [],
+    "fetched_at": null
+  }
+}
