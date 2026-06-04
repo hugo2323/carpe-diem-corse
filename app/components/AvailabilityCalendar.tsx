@@ -105,6 +105,24 @@ export default function AvailabilityCalendar() {
     return gapDiscountPctForNights(nightsBetween(ci, co));
   };
 
+  // Longueur (en nuits) du créneau libre continu qui contient `night`, borné
+  // par les indispos (ou la 1ʳᵉ date réservable à gauche).
+  const gapLengthAround = (night: string, min: string): number => {
+    let first = night;
+    for (let g = 0; g < 400; g++) {
+      const prev = addDaysIso(first, -1);
+      if (prev < min || blocked.has(prev)) break;
+      first = prev;
+    }
+    let last = night;
+    for (let g = 0; g < 400; g++) {
+      const next = addDaysIso(last, 1);
+      if (blocked.has(next)) break;
+      last = next;
+    }
+    return nightsBetween(first, last) + 1;
+  };
+
   const currentQuote = useMemo(() => {
     if (!checkIn || !checkOut || !today || !minDate) return null;
     const gapPct = gapDiscountPctFor(checkIn, checkOut, minDate);
@@ -165,18 +183,16 @@ export default function AvailabilityCalendar() {
       return;
     }
 
-    // Séjour minimum (variable selon la saison) — SAUF si la sélection comble
-    // exactement un trou entre deux réservations (mur à gauche et à droite).
+    // Séjour minimum (variable selon la saison) — SAUF si le créneau libre qui
+    // contient l'arrivée est lui-même plus court que ce minimum : on autorise
+    // alors n'importe quel séjour à l'intérieur (pour ne pas perdre ces nuits).
     const min = minNightsForDate(checkIn!);
-    if (nightsBetween(checkIn!, date) < min) {
-      const leftWall =
-        addDaysIso(checkIn!, -1) < minDate ||
-        blocked.has(addDaysIso(checkIn!, -1));
-      const rightWall = blocked.has(date);
-      if (!(leftWall && rightWall)) {
-        setShortStay(true);
-        return;
-      }
+    if (
+      nightsBetween(checkIn!, date) < min &&
+      gapLengthAround(checkIn!, minDate) >= min
+    ) {
+      setShortStay(true);
+      return;
     }
 
     // Valide : `date` devient le jour de départ.
@@ -391,8 +407,7 @@ export default function AvailabilityCalendar() {
             maintenant votre date de départ.
             {shortStay && (
               <span className="block text-gold font-semibold mt-1">
-                Séjour minimum {minNightsForDate(checkIn)} nuits sur cette période
-                — sauf pour combler un trou entre deux réservations.
+                Séjour minimum {minNightsForDate(checkIn)} nuits sur cette période.
               </span>
             )}
           </p>
