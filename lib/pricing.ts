@@ -48,7 +48,7 @@ export function gapDiscountPctForNights(gapNights: number): number {
 export const CLEANING_FEE = 200;
 
 // Règles de réservation.
-export const MIN_LEAD_DAYS = 1; // délai minimum avant l'arrivée (pas le jour même)
+export const MIN_LEAD_DAYS = 0; // arrivée possible dès aujourd'hui
 export const DEFAULT_MIN_NIGHTS = 1; // hors saison : pas de minimum (1 nuit OK)
 // Séjour minimum variable selon la saison (date d'arrivée).
 const MIN_STAY_PERIODS = [
