@@ -6,6 +6,10 @@
 // sélectionne la fiche exacte ; on retire les paramètres de session (g_ep)
 // éphémères pour un lien stable.
 
+// URL canonique du site (domaine custom via NEXT_PUBLIC_SITE_URL le moment venu).
+export const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL || "https://carpe-diem-corse.vercel.app";
+
 export const VILLA_COORDS = { lat: 41.8260299, lng: 8.7846614 };
 
 export const GOOGLE_MAPS_PLACE_URL =

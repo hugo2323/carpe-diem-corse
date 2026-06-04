@@ -1,4 +1,7 @@
+"use client";
+
 import Image from "next/image";
+import { trackEvent } from "@/lib/gtag";
 
 const photos = [1, 6, 7, 8, 9, 10, 11, 17].map((n) => ({
   src: `/photos/voiture/bigster-${n}.jpg`,
@@ -30,6 +33,7 @@ export default function CarSection() {
                 href="https://turo.com/fr/fr/location-suv/france/undefined/dacia/bigster-hybrid/3517110"
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => trackEvent("click_turo")}
                 className="inline-flex items-center justify-center gap-3 bg-gold hover:bg-gold-light text-white px-8 py-4 rounded font-lato font-bold tracking-wider uppercase text-sm transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-0.5"
               >
                 Réserver sur Turo

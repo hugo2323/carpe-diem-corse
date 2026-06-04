@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Playfair_Display, Lato } from "next/font/google";
 import "./globals.css";
 import GoogleAnalytics from "./components/GoogleAnalytics";
+import { SITE_URL } from "@/lib/location";
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
@@ -16,11 +17,6 @@ const lato = Lato({
   display: "swap",
 });
 
-// URL canonique du site — à passer au domaine personnalisé via la variable
-// d'environnement NEXT_PUBLIC_SITE_URL le jour où il est branché.
-const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL || "https://carpe-diem-corse.vercel.app";
-
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: "Carpe Diem - Location Villa Vue Mer Corse | Pietrosella Ruppione",
@@ -28,12 +24,30 @@ export const metadata: Metadata = {
     "Villa 110m² vue mer panoramique, 4 chambres, 8 personnes. Plage du Ruppione à 1km. Location vacances Pietrosella, Corse du Sud.",
   keywords:
     "villa corse location, pietrosella, ruppione, vue mer, ajaccio, vacances corse",
+  alternates: { canonical: "/" },
   openGraph: {
     title: "Carpe Diem - Villa Vue Mer en Corse",
     description:
       "Villa 110m² vue mer panoramique, 4 chambres, 8 personnes. Plage du Ruppione à 1km.",
-    images: ["/photos/exterieur/exterieur-1.jpeg"],
+    url: SITE_URL,
+    siteName: "Villa Carpe Diem",
+    locale: "fr_FR",
+    images: [
+      {
+        url: "/photos/exterieur/exterieur-1.jpeg",
+        width: 1200,
+        height: 800,
+        alt: "Villa Carpe Diem - vue mer en Corse",
+      },
+    ],
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Carpe Diem - Villa Vue Mer en Corse",
+    description:
+      "Villa 110m² vue mer panoramique, 4 chambres, 8 personnes. Plage du Ruppione à 1km.",
+    images: ["/photos/exterieur/exterieur-1.jpeg"],
   },
 };
 

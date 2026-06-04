@@ -7,6 +7,7 @@ import {
   GOOGLE_MAPS_PLACE_URL,
   GOOGLE_MAPS_DIRECTIONS_URL,
 } from "@/lib/location";
+import { trackLead } from "@/lib/gtag";
 
 // Clé Web3Forms (publique par conception) — obtenue gratuitement sur
 // https://web3forms.com en entrant l'adresse de réception.
@@ -99,6 +100,8 @@ export default function ContactSection() {
       });
       const data = await res.json();
       if (data.success) {
+        // Conversion : demande de réservation envoyée (GA4 + Google Ads).
+        trackLead(selection?.total);
         setStatus("success");
         setForm({
           nom: "",

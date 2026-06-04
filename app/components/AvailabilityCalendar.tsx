@@ -6,6 +6,7 @@ import {
   minNightsForDate,
   gapDiscountPctForNights,
   MIN_LEAD_DAYS,
+  CLEANING_FEE,
 } from "@/lib/pricing";
 import { useBooking } from "./BookingProvider";
 import Icon from "./Icon";
@@ -635,9 +636,15 @@ export default function AvailabilityCalendar() {
               </button>
             </div>
 
+            <div className="flex items-center justify-between mt-4 font-lato text-xs text-gray-500">
+              <span>Frais de ménage (à régler sur place)</span>
+              <span>{CLEANING_FEE} €</span>
+            </div>
+
             <p className="font-lato text-[11px] text-gray-400 mt-3 text-center">
-              Tarif estimatif hors frais de ménage et taxe de séjour — demande de
-              disponibilité, le tarif exact vous est confirmé sous 24h.
+              Tarif indicatif hors taxe de séjour. Forfait ménage de {CLEANING_FEE} €
+              réglé sur place (Kalypso Conciergerie). Demande de disponibilité — le
+              tarif exact vous est confirmé sous 24h.
             </p>
           </div>
         )}

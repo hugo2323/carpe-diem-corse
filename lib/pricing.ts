@@ -43,6 +43,10 @@ export function gapDiscountPctForNights(gapNights: number): number {
   return gapNights >= 1 && gapNights <= GAP_MAX_NIGHTS ? GAP_DISCOUNT_PCT : 0;
 }
 
+// Frais de ménage : forfait réglé sur place auprès de Kalypso Conciergerie.
+// Non inclus dans le tarif indicatif (payé à part, sur place).
+export const CLEANING_FEE = 200;
+
 // Règles de réservation.
 export const MIN_LEAD_DAYS = 1; // délai minimum avant l'arrivée (pas le jour même)
 export const DEFAULT_MIN_NIGHTS = 1; // hors saison : pas de minimum (1 nuit OK)
