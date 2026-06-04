@@ -50,9 +50,14 @@ export default function ContactSection() {
       selection.withCar && selection.total !== selection.villaTotal
         ? ` Total indicatif : ~${selection.total.toLocaleString("fr-FR")} €.`
         : ".";
+    const timeLabel: Record<string, string> = {
+      last_minute: "dernière minute dégressive",
+      length_of_stay: "réduction séjour",
+      gap: "offre créneau",
+    };
     const remises: string[] = [];
-    if (selection.lastMinuteSaved > 0)
-      remises.push("dernière minute dégressive");
+    if (selection.timeSaved > 0 && timeLabel[selection.timeDiscountKind])
+      remises.push(timeLabel[selection.timeDiscountKind]);
     if (selection.vehicleSaved > 0) remises.push("−5% pack véhicule sur la villa");
     const discountPart = remises.length
       ? ` Remises incluses : ${remises.join(" et ")}.`

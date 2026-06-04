@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { quote, MIN_NIGHTS, MIN_LEAD_DAYS } from "@/lib/pricing";
+import {
+  quote,
+  minNightsForDate,
+  gapDiscountPctForNights,
+  MIN_LEAD_DAYS,
+} from "@/lib/pricing";
 import { useBooking } from "./BookingProvider";
 import Icon from "./Icon";
 
@@ -90,13 +95,22 @@ export default function AvailabilityCalendar() {
 
   const blocked = useMemo(() => new Set(data?.blocked ?? []), [data]);
 
-  const currentQuote = useMemo(
-    () =>
-      checkIn && checkOut && today
-        ? quote(checkIn, checkOut, withCar, today)
-        : null,
-    [checkIn, checkOut, withCar, today]
-  );
+  // % remise « créneau » : non nul seulement si le séjour comble exactement un
+  // trou (mur à gauche = réservation/début ; mur à droite = réservation).
+  const gapDiscountPctFor = (ci: string, co: string, min: string): number => {
+    const leftWall =
+      addDaysIso(ci, -1) < min || blocked.has(addDaysIso(ci, -1));
+    const rightWall = blocked.has(co);
+    if (!(leftWall && rightWall)) return 0;
+    return gapDiscountPctForNights(nightsBetween(ci, co));
+  };
+
+  const currentQuote = useMemo(() => {
+    if (!checkIn || !checkOut || !today || !minDate) return null;
+    const gapPct = gapDiscountPctFor(checkIn, checkOut, minDate);
+    return quote(checkIn, checkOut, withCar, today, gapPct);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [checkIn, checkOut, withCar, today, minDate, blocked]);
 
   if (!cursor || !today || !minDate || minMonth === null) {
     return (
@@ -151,10 +165,18 @@ export default function AvailabilityCalendar() {
       return;
     }
 
-    // Séjour minimum : on refuse un départ trop proche de l'arrivée.
-    if (nightsBetween(checkIn!, date) < MIN_NIGHTS) {
-      setShortStay(true);
-      return;
+    // Séjour minimum (variable selon la saison) — SAUF si la sélection comble
+    // exactement un trou entre deux réservations (mur à gauche et à droite).
+    const min = minNightsForDate(checkIn!);
+    if (nightsBetween(checkIn!, date) < min) {
+      const leftWall =
+        addDaysIso(checkIn!, -1) < minDate ||
+        blocked.has(addDaysIso(checkIn!, -1));
+      const rightWall = blocked.has(date);
+      if (!(leftWall && rightWall)) {
+        setShortStay(true);
+        return;
+      }
     }
 
     // Valide : `date` devient le jour de départ.
@@ -176,7 +198,8 @@ export default function AvailabilityCalendar() {
       checkOut,
       nights: currentQuote.nights,
       villaBase: currentQuote.villaBase,
-      lastMinuteSaved: currentQuote.lastMinuteSaved,
+      timeSaved: currentQuote.timeSaved,
+      timeDiscountKind: currentQuote.timeDiscountKind,
       vehicleSaved: currentQuote.vehicleSaved,
       villaTotal: currentQuote.villaTotal,
       withCar: currentQuote.withCar,
@@ -298,6 +321,9 @@ export default function AvailabilityCalendar() {
             −10% · semaine 3
           </span>
         </div>
+        <p className="font-lato text-[11px] text-gray-400 mt-2.5">
+          Réduction séjour : −10% dès 7 nuits · −20% dès 28 nuits
+        </p>
       </div>
 
       {/* Navigation mois */}
@@ -354,7 +380,7 @@ export default function AvailabilityCalendar() {
             Cliquez sur une date d&apos;arrivée puis une date de départ pour
             estimer votre séjour.{" "}
             <span className="text-gray-400">
-              Séjour minimum {MIN_NIGHTS} nuits.
+              Séjour minimum 3 à 7 nuits selon la période.
             </span>
           </p>
         )}
@@ -365,8 +391,8 @@ export default function AvailabilityCalendar() {
             maintenant votre date de départ.
             {shortStay && (
               <span className="block text-gold font-semibold mt-1">
-                Séjour minimum {MIN_NIGHTS} nuits — choisissez une date de départ
-                plus tardive.
+                Séjour minimum {minNightsForDate(checkIn)} nuits sur cette période
+                — sauf pour combler un trou entre deux réservations.
               </span>
             )}
           </p>
@@ -403,21 +429,47 @@ export default function AvailabilityCalendar() {
                 </span>
               </div>
 
-              {/* Remises dernière minute, distinctes par palier */}
-              {currentQuote.lastMinuteTiers.map((t) => (
-                <div
-                  key={t.pct}
-                  className="flex items-center justify-between text-gold"
-                >
+              {/* Remise « temps » appliquée = la meilleure des trois */}
+              {currentQuote.timeDiscountKind === "last_minute" &&
+                currentQuote.lastMinuteTiers.map((t) => (
+                  <div
+                    key={t.pct}
+                    className="flex items-center justify-between text-gold"
+                  >
+                    <span>
+                      Dernière minute −{t.pct}%{" "}
+                      <span className="text-gold/70">
+                        · {t.nights} nuit{t.nights > 1 ? "s" : ""}
+                      </span>
+                    </span>
+                    <span>−{t.saved.toLocaleString("fr-FR")} €</span>
+                  </div>
+                ))}
+
+              {currentQuote.timeDiscountKind === "length_of_stay" && (
+                <div className="flex items-center justify-between text-gold">
                   <span>
-                    Dernière minute −{t.pct}%{" "}
+                    Réduction séjour −{currentQuote.lengthOfStayPct}%{" "}
                     <span className="text-gold/70">
-                      · {t.nights} nuit{t.nights > 1 ? "s" : ""}
+                      · {currentQuote.nights} nuits
                     </span>
                   </span>
-                  <span>−{t.saved.toLocaleString("fr-FR")} €</span>
+                  <span>−{currentQuote.timeSaved.toLocaleString("fr-FR")} €</span>
                 </div>
-              ))}
+              )}
+
+              {currentQuote.timeDiscountKind === "gap" && (
+                <div className="flex items-center justify-between text-gold">
+                  <span>
+                    Offre créneau −{currentQuote.gapDiscountPct}%{" "}
+                    <span className="text-gold/70">
+                      · comble un trou de {currentQuote.nights} nuit
+                      {currentQuote.nights > 1 ? "s" : ""}
+                    </span>
+                  </span>
+                  <span>−{currentQuote.timeSaved.toLocaleString("fr-FR")} €</span>
+                </div>
+              )}
 
               {/* Remise pack véhicule (5% de la base, cumulable) */}
               {currentQuote.vehicleSaved > 0 && (

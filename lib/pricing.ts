@@ -23,9 +23,44 @@ export const VEHICLE_PRICING_MODE: "on_request" | "dynamic" = "dynamic";
 // Remise accordée sur la base villa quand le véhicule est ajouté au séjour.
 export const VEHICLE_PACK_DISCOUNT_PCT = 5;
 
+// Remise à la durée de séjour (calée sur les réglages Airbnb : semaine / mois).
+const LENGTH_OF_STAY_DISCOUNTS = [
+  { minNights: 28, pct: 20 }, // 28 nuits et + (mensuel)
+  { minNights: 7, pct: 10 }, // 7 nuits et + (hebdo)
+];
+export function lengthOfStayDiscountPct(nights: number): number {
+  for (const d of LENGTH_OF_STAY_DISCOUNTS) if (nights >= d.minNights) return d.pct;
+  return 0;
+}
+
+// Remise « créneau » : très agressive sur les courts trous coincés entre deux
+// réservations (nuits orphelines difficiles à vendre). Plus le trou est court,
+// plus la remise est forte. Appliquée seulement quand le séjour comble
+// EXACTEMENT un trou (détecté côté calendrier, qui connaît les dispos).
+const GAP_DISCOUNT_TIERS = [
+  { maxNights: 2, pct: 40 },
+  { maxNights: 4, pct: 30 },
+  { maxNights: 6, pct: 20 },
+];
+export function gapDiscountPctForNights(gapNights: number): number {
+  for (const t of GAP_DISCOUNT_TIERS) if (gapNights <= t.maxNights) return t.pct;
+  return 0;
+}
+
 // Règles de réservation.
-export const MIN_NIGHTS = 3; // durée minimale d'un séjour
 export const MIN_LEAD_DAYS = 1; // délai minimum avant l'arrivée (pas le jour même)
+export const DEFAULT_MIN_NIGHTS = 3;
+// Séjour minimum variable selon la saison (date d'arrivée).
+const MIN_STAY_PERIODS = [
+  { from: "07-14", to: "08-24", nights: 7 }, // très haute saison
+  { from: "06-01", to: "07-13", nights: 5 }, // haute
+  { from: "08-25", to: "09-15", nights: 5 }, // haute
+];
+export function minNightsForDate(checkInIso: string): number {
+  const md = checkInIso.slice(5);
+  for (const p of MIN_STAY_PERIODS) if (md >= p.from && md <= p.to) return p.nights;
+  return DEFAULT_MIN_NIGHTS;
+}
 
 type Tier = keyof RateSet;
 type Period = { from: string; to: string; tier: Tier };
@@ -78,17 +113,29 @@ export function nightDiscountPct(nightIso: string, today: string): number {
 // Une ligne de remise dernière minute (un palier présent dans le séjour).
 export type LastMinuteTier = { pct: number; nights: number; saved: number };
 
+// Remise « temps » réellement appliquée (la meilleure des trois candidates).
+export type TimeDiscountKind = "none" | "last_minute" | "length_of_stay" | "gap";
+
 export type Quote = {
   nights: number;
   villaBase: number; // villa plein tarif
-  lastMinuteTiers: LastMinuteTier[]; // paliers présents, triés −40 → −10
-  lastMinuteSaved: number; // total remises dernière minute
-  vehiclePackPct: number; // 5 si véhicule ajouté, sinon 0
-  vehicleSaved: number; // 5% de la base si véhicule
-  totalSaved: number; // lastMinuteSaved + vehicleSaved
+  // Candidats de remise (calculés)
+  lastMinuteTiers: LastMinuteTier[]; // paliers dégressifs présents
+  lastMinuteSaved: number;
+  lengthOfStayPct: number;
+  lengthOfStaySaved: number;
+  gapDiscountPct: number;
+  gapDiscountSaved: number;
+  // Remise « temps » appliquée = la meilleure des trois (pas de cumul entre elles)
+  timeDiscountKind: TimeDiscountKind;
+  timeSaved: number;
+  // Pack véhicule (cumulable avec la remise temps)
+  vehiclePackPct: number;
+  vehicleSaved: number;
+  totalSaved: number; // timeSaved + vehicleSaved
   villaTotal: number; // villa après toutes remises
   withCar: boolean;
-  vehicleOnRequest: boolean; // prix véhicule « sur demande »
+  vehicleOnRequest: boolean;
   carTotal: number | null;
   total: number;
   avgPerNight: number;
@@ -98,7 +145,8 @@ export function quote(
   checkIn: string,
   checkOut: string,
   withCar = false,
-  today?: string
+  today?: string,
+  gapDiscountPct = 0
 ): Quote | null {
   const start = new Date(`${checkIn}T00:00:00Z`);
   const end = new Date(`${checkOut}T00:00:00Z`);
@@ -109,7 +157,6 @@ export function quote(
   let villaBase = 0;
   let carBase = 0;
   let nights = 0;
-  // Cumul des remises dernière minute par palier (%).
   const tierAcc: Record<number, { nights: number; saved: number }> = {};
 
   for (let d = new Date(start); d < end; d.setUTCDate(d.getUTCDate() + 1)) {
@@ -127,6 +174,7 @@ export function quote(
     }
   }
 
+  // Candidat 1 : dernière minute dégressive (par nuit).
   const lastMinuteTiers: LastMinuteTier[] = Object.keys(tierAcc)
     .map((k) => Number(k))
     .sort((a, b) => b - a)
@@ -135,16 +183,38 @@ export function quote(
       nights: tierAcc[pct].nights,
       saved: Math.round(tierAcc[pct].saved),
     }));
-
   const lastMinuteSaved = lastMinuteTiers.reduce((s, t) => s + t.saved, 0);
 
-  // Remise pack véhicule : 5% de la base (avant remise dernière minute).
+  // Candidat 2 : remise à la durée de séjour.
+  const lengthOfStayPct = lengthOfStayDiscountPct(nights);
+  const lengthOfStaySaved = Math.round((villaBase * lengthOfStayPct) / 100);
+
+  // Candidat 3 : remise « créneau » (trou comblé), % fourni par l'appelant.
+  const gapDiscountSaved = Math.round((villaBase * gapDiscountPct) / 100);
+
+  // On applique la MEILLEURE des trois remises « temps » (pas de cumul).
+  let timeSaved = 0;
+  let timeDiscountKind: TimeDiscountKind = "none";
+  if (lastMinuteSaved > timeSaved) {
+    timeSaved = lastMinuteSaved;
+    timeDiscountKind = "last_minute";
+  }
+  if (lengthOfStaySaved > timeSaved) {
+    timeSaved = lengthOfStaySaved;
+    timeDiscountKind = "length_of_stay";
+  }
+  if (gapDiscountSaved > timeSaved) {
+    timeSaved = gapDiscountSaved;
+    timeDiscountKind = "gap";
+  }
+
+  // Pack véhicule : 5% de la base, cumulable avec la remise temps.
   const vehiclePackPct = withCar ? VEHICLE_PACK_DISCOUNT_PCT : 0;
   const vehicleSaved = withCar
     ? Math.round((villaBase * VEHICLE_PACK_DISCOUNT_PCT) / 100)
     : 0;
 
-  const totalSaved = lastMinuteSaved + vehicleSaved;
+  const totalSaved = timeSaved + vehicleSaved;
   const villaTotal = Math.max(0, villaBase - totalSaved);
 
   const vehicleOnRequest = VEHICLE_PRICING_MODE === "on_request";
@@ -155,6 +225,12 @@ export function quote(
     villaBase,
     lastMinuteTiers,
     lastMinuteSaved,
+    lengthOfStayPct,
+    lengthOfStaySaved,
+    gapDiscountPct,
+    gapDiscountSaved,
+    timeDiscountKind,
+    timeSaved,
     vehiclePackPct,
     vehicleSaved,
     totalSaved,
