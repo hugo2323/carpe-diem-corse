@@ -18,7 +18,8 @@ type IconName =
   | "parking"
   | "kitchen"
   | "check"
-  | "cube";
+  | "cube"
+  | "navigation";
 
 const PATHS: Record<IconName, React.ReactNode> = {
   sea: (
@@ -133,6 +134,11 @@ const PATHS: Record<IconName, React.ReactNode> = {
       <path d="M12 2 3 7v10l9 5 9-5V7z" />
       <path d="M3 7l9 5 9-5" />
       <path d="M12 12v10" />
+    </>
+  ),
+  navigation: (
+    <>
+      <polygon points="3 11 22 2 13 21 11 13 3 11" />
     </>
   ),
 };

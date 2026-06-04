@@ -7,11 +7,13 @@ export type BookingSelection = {
   checkOut: string; // YYYY-MM-DD
   nights: number;
   villaBase: number; // villa plein tarif
-  villaDiscountPct: number; // remise dernière minute appliquée (0 si aucune)
+  villaDiscountPct: number; // remise appliquée (0 si aucune)
+  villaDiscountKind: "none" | "last_minute" | "vehicle_pack";
   villaTotal: number; // villa après remise
-  carTotal: number; // coût voiture si ajoutée, sinon 0
-  withCar: boolean;
-  total: number; // tarif indicatif EUR (villa remisée + voiture si withCar)
+  withCar: boolean; // véhicule ajouté au séjour
+  vehicleOnRequest: boolean; // prix véhicule « sur demande »
+  carTotal: number | null; // coût véhicule si tarif dynamique, sinon null
+  total: number; // tarif indicatif EUR
 };
 
 type BookingCtx = {

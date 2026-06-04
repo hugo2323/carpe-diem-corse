@@ -1,4 +1,5 @@
 import Icon from "./Icon";
+import { GOOGLE_MAPS_PLACE_URL } from "@/lib/location";
 
 export default function Footer() {
   return (
@@ -58,13 +59,13 @@ export default function Footer() {
                 Airbnb
               </a>
               <a
-                href="https://www.google.com/maps/place/Villa+vue+mer+6%2F8+personnes+(SCI+horizon)/@41.8260299,8.7846614,17z"
+                href={GOOGLE_MAPS_PLACE_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2.5 font-lato text-gray-400 hover:text-gold transition-colors duration-200 text-sm"
               >
                 <Icon name="pin" size={18} className="flex-shrink-0" />
-                Voir sur Google Maps
+                Voir la villa sur Google Maps
               </a>
               <a
                 href="mailto:hugo.valette@outlook.com"

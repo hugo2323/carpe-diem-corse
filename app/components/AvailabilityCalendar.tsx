@@ -150,9 +150,11 @@ export default function AvailabilityCalendar() {
       nights: currentQuote.nights,
       villaBase: currentQuote.villaBase,
       villaDiscountPct: currentQuote.villaDiscountPct,
+      villaDiscountKind: currentQuote.villaDiscountKind,
       villaTotal: currentQuote.villaTotal,
-      carTotal: currentQuote.withCar ? currentQuote.carTotal : 0,
       withCar: currentQuote.withCar,
+      vehicleOnRequest: currentQuote.vehicleOnRequest,
+      carTotal: currentQuote.withCar ? currentQuote.carTotal : null,
       total: currentQuote.total,
     });
     document.getElementById("reserver")?.scrollIntoView({ behavior: "smooth" });
@@ -337,62 +339,85 @@ export default function AvailabilityCalendar() {
               </span>
             </p>
 
-            {/* Ventilation villa + voiture */}
+            {/* Détail du tarif villa */}
             <div className="mt-4 space-y-2 font-lato text-sm">
               <div className="flex items-center justify-between">
                 <span className="text-gray-700">
-                  Villa{" "}
+                  Tarif villa{" "}
                   <span className="text-gray-400">
                     (~{currentQuote.avgPerNight} €/nuit)
                   </span>
-                  {currentQuote.villaDiscountPct > 0 && (
-                    <span className="ml-2 inline-block bg-red-500 text-white text-[11px] font-bold px-2 py-0.5 rounded-full align-middle">
-                      −{currentQuote.villaDiscountPct}%
-                    </span>
-                  )}
-                </span>
-                <span className="text-sea-blue font-semibold whitespace-nowrap">
-                  {currentQuote.villaDiscountPct > 0 && (
-                    <span className="line-through text-gray-400 font-normal mr-2">
-                      ~{currentQuote.villaBase.toLocaleString("fr-FR")} €
-                    </span>
-                  )}
-                  ~{currentQuote.villaTotal.toLocaleString("fr-FR")} €
-                </span>
-              </div>
-
-              <label className="flex items-center justify-between cursor-pointer select-none">
-                <span className="flex items-center gap-2 text-gray-700">
-                  <input
-                    type="checkbox"
-                    checked={withCar}
-                    onChange={(e) => setWithCar(e.target.checked)}
-                    className="w-4 h-4 accent-gold"
-                  />
-                  <Icon name="car" size={18} className="text-sea-blue" />
-                  Voiture (Dacia Bigster)
                 </span>
                 <span
                   className={
-                    withCar ? "text-sea-blue font-semibold" : "text-gray-400"
+                    currentQuote.villaDiscountPct > 0
+                      ? "text-gray-400 line-through"
+                      : "text-sea-blue font-semibold"
                   }
                 >
-                  +{currentQuote.carTotal.toLocaleString("fr-FR")} €
+                  ~{currentQuote.villaBase.toLocaleString("fr-FR")} €
                 </span>
-              </label>
+              </div>
+
+              {currentQuote.villaDiscountPct > 0 && (
+                <>
+                  <div className="flex items-center justify-between text-gold">
+                    <span>
+                      {currentQuote.villaDiscountKind === "vehicle_pack"
+                        ? "Remise pack véhicule"
+                        : "Offre dernière minute"}{" "}
+                      −{currentQuote.villaDiscountPct}%
+                    </span>
+                    <span>
+                      −{currentQuote.villaSaved.toLocaleString("fr-FR")} €
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-700">Tarif villa après remise</span>
+                    <span className="text-sea-blue font-semibold">
+                      ~{currentQuote.villaTotal.toLocaleString("fr-FR")} €
+                    </span>
+                  </div>
+                </>
+              )}
             </div>
 
-            {currentQuote.villaSaved > 0 && (
-              <p className="mt-3 text-center font-lato text-sm text-red-600 font-semibold">
-                Offre dernière minute : vous économisez ~
-                {currentQuote.villaSaved.toLocaleString("fr-FR")} € sur la villa
-              </p>
-            )}
+            {/* Option véhicule — carte discrète */}
+            <label className="block mt-4 rounded-xl border border-gold/30 bg-white p-4 cursor-pointer select-none">
+              <div className="flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  checked={withCar}
+                  onChange={(e) => setWithCar(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 accent-gold flex-shrink-0"
+                />
+                <div className="min-w-0">
+                  <span className="flex items-center gap-2 font-lato text-sm font-semibold text-sea-blue">
+                    <Icon name="car" size={18} className="flex-shrink-0" />
+                    Ajouter le véhicule au séjour
+                  </span>
+                  <p className="font-lato text-xs text-gray-500 leading-relaxed mt-1">
+                    Besoin d&apos;un véhicule sur place ? Ajoutez le véhicule à
+                    votre séjour et bénéficiez de 5% de remise sur le tarif de la
+                    villa.
+                  </p>
+                  {withCar && (
+                    <p className="font-lato text-xs text-gray-500 mt-2">
+                      Véhicule (Dacia Bigster) —{" "}
+                      <span className="text-sea-blue font-semibold">
+                        sur demande
+                      </span>
+                      . Sous réserve de disponibilité du véhicule.
+                    </p>
+                  )}
+                </div>
+              </div>
+            </label>
 
             {/* Total */}
             <div className="flex items-end justify-between mt-4 pt-4 border-t border-gold/20">
               <span className="font-lato text-sm text-gray-600">
-                Total {withCar ? "tout inclus" : "villa"}
+                Tarif villa
               </span>
               <span className="text-right">
                 <span className="font-playfair text-3xl text-sea-blue block leading-none">

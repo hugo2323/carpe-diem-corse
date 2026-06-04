@@ -3,6 +3,10 @@
 import { useEffect, useState } from "react";
 import { useBooking } from "./BookingProvider";
 import Icon, { type IconName } from "./Icon";
+import {
+  GOOGLE_MAPS_PLACE_URL,
+  GOOGLE_MAPS_DIRECTIONS_URL,
+} from "@/lib/location";
 
 // Clé Web3Forms (publique par conception) — obtenue gratuitement sur
 // https://web3forms.com en entrant l'adresse de réception.
@@ -34,18 +38,17 @@ export default function ContactSection() {
   // calendrier de disponibilités (bouton « Demander ces dates »).
   useEffect(() => {
     if (!selection) return;
-    const carPart = selection.withCar
-      ? " avec la voiture (Dacia Bigster)"
-      : "";
-    const breakdown = selection.withCar
-      ? ` (villa ${selection.villaTotal.toLocaleString(
-          "fr-FR"
-        )} € + voiture ${selection.carTotal.toLocaleString("fr-FR")} €)`
-      : "";
-    const promoPart =
+    const discountPart =
       selection.villaDiscountPct > 0
-        ? ` Offre dernière minute −${selection.villaDiscountPct}% appliquée sur la villa.`
+        ? ` Remise ${
+            selection.villaDiscountKind === "vehicle_pack"
+              ? "pack véhicule"
+              : "dernière minute"
+          } −${selection.villaDiscountPct}% incluse.`
         : "";
+    const vehiclePart = selection.withCar
+      ? " Je souhaite ajouter le véhicule au séjour (sur demande, sous réserve de disponibilité)."
+      : "";
     setForm((f) => ({
       ...f,
       dateArrivee: selection.checkIn,
@@ -56,9 +59,9 @@ export default function ContactSection() {
           selection.checkIn
         )} au ${frDate(selection.checkOut)} (${selection.nights} nuit${
           selection.nights > 1 ? "s" : ""
-        })${carPart}. Tarif indicatif estimé : ~${selection.total.toLocaleString(
+        }). Tarif villa indicatif : ~${selection.total.toLocaleString(
           "fr-FR"
-        )} €${breakdown}.${promoPart} Merci de me confirmer la disponibilité et le tarif exact.`,
+        )} €.${discountPart}${vehiclePart} Merci de me confirmer la disponibilité et le tarif exact.`,
     }));
   }, [selection]);
 
@@ -155,15 +158,26 @@ export default function ContactSection() {
                       <p className="font-lato text-white">{c.value}</p>
                     )}
                     {c.label === "Adresse" && (
-                      <a
-                        href="https://www.google.com/maps/place/Villa+vue+mer+6%2F8+personnes+(SCI+horizon)/@41.8260299,8.7846614,17z"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-lato text-gold hover:text-white transition-colors duration-200 text-sm mt-2 inline-flex items-center gap-1.5"
-                      >
-                        <Icon name="pin" size={15} />
-                        Voir sur Google Maps
-                      </a>
+                      <div className="flex flex-col gap-2 mt-3">
+                        <a
+                          href={GOOGLE_MAPS_PLACE_URL}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-lato text-gold hover:text-white transition-colors duration-200 text-sm inline-flex items-center gap-1.5"
+                        >
+                          <Icon name="pin" size={15} className="flex-shrink-0" />
+                          Voir la villa sur Google Maps
+                        </a>
+                        <a
+                          href={GOOGLE_MAPS_DIRECTIONS_URL}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-lato text-white/70 hover:text-gold transition-colors duration-200 text-sm inline-flex items-center gap-1.5"
+                        >
+                          <Icon name="navigation" size={15} className="flex-shrink-0" />
+                          Obtenir l&apos;itinéraire
+                        </a>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -195,7 +209,7 @@ export default function ContactSection() {
                       ({selection.nights} nuit{selection.nights > 1 ? "s" : ""})
                     </span>
                     {selection.withCar && (
-                      <span className="text-gray-500"> · voiture</span>
+                      <span className="text-gray-500"> · véhicule (sur demande)</span>
                     )}
                   </span>
                 </span>
