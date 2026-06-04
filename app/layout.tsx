@@ -16,7 +16,13 @@ const lato = Lato({
   display: "swap",
 });
 
+// URL canonique du site — à passer au domaine personnalisé via la variable
+// d'environnement NEXT_PUBLIC_SITE_URL le jour où il est branché.
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL || "https://carpe-diem-corse.vercel.app";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: "Carpe Diem - Location Villa Vue Mer Corse | Pietrosella Ruppione",
   description:
     "Villa 110m² vue mer panoramique, 4 chambres, 8 personnes. Plage du Ruppione à 1km. Location vacances Pietrosella, Corse du Sud.",
@@ -37,7 +43,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fr">
+    <html lang="fr" className="scroll-smooth">
       <head>
         <GoogleAnalytics />
       </head>

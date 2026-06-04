@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useBooking } from "./BookingProvider";
+import Icon, { type IconName } from "./Icon";
 
 // Clé Web3Forms (publique par conception) — obtenue gratuitement sur
 // https://web3forms.com en entrant l'adresse de réception.
@@ -129,14 +130,16 @@ export default function ContactSection() {
             </h3>
 
             <div className="space-y-6">
-              {[
-                { icon: "📞", label: "Téléphone", value: "06.74.25.63.36", href: "tel:+33674256336" },
-                { icon: "✉️", label: "Email", value: "hugo.valette@outlook.com", href: "mailto:hugo.valette@outlook.com" },
-                { icon: "📍", label: "Adresse", value: "Pietrosella – Le Ruppione (20166), Corse-du-Sud", href: null },
-                { icon: "🤝", label: "Conciergerie", value: "Accueil par Kalypso Conciergerie", href: null },
-              ].map((c) => (
+              {([
+                { icon: "phone", label: "Téléphone", value: "06.74.25.63.36", href: "tel:+33674256336" },
+                { icon: "mail", label: "Email", value: "hugo.valette@outlook.com", href: "mailto:hugo.valette@outlook.com" },
+                { icon: "pin", label: "Adresse", value: "Pietrosella – Le Ruppione (20166), Corse-du-Sud", href: null },
+                { icon: "concierge", label: "Conciergerie", value: "Accueil par Kalypso Conciergerie", href: null },
+              ] as { icon: IconName; label: string; value: string; href: string | null }[]).map((c) => (
                 <div key={c.label} className="flex items-start gap-4">
-                  <span className="text-2xl w-8 flex-shrink-0">{c.icon}</span>
+                  <span className="text-gold w-8 flex-shrink-0 flex justify-center pt-0.5">
+                    <Icon name={c.icon} size={22} />
+                  </span>
                   <div>
                     <p className="font-lato text-white/60 text-xs uppercase tracking-wider mb-1">
                       {c.label}
@@ -156,9 +159,10 @@ export default function ContactSection() {
                         href="https://www.google.com/maps/place/Villa+vue+mer+6%2F8+personnes+(SCI+horizon)/@41.8260299,8.7846614,17z"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="font-lato text-gold hover:text-white transition-colors duration-200 text-sm mt-1 inline-block"
+                        className="font-lato text-gold hover:text-white transition-colors duration-200 text-sm mt-2 inline-flex items-center gap-1.5"
                       >
-                        📍 Voir sur Google Maps
+                        <Icon name="pin" size={15} />
+                        Voir sur Google Maps
                       </a>
                     )}
                   </div>
@@ -183,14 +187,17 @@ export default function ContactSection() {
 
             {selection && status !== "success" && (
               <div className="mb-6 bg-cream rounded-xl px-4 py-3 border border-gold/20 flex items-center justify-between gap-3">
-                <span className="font-lato text-sm text-sea-blue">
-                  📅 {frDate(selection.checkIn)} → {frDate(selection.checkOut)}{" "}
-                  <span className="text-gray-500">
-                    ({selection.nights} nuit{selection.nights > 1 ? "s" : ""})
+                <span className="font-lato text-sm text-sea-blue flex items-center gap-2">
+                  <Icon name="calendar" size={16} className="text-gold flex-shrink-0" />
+                  <span>
+                    {frDate(selection.checkIn)} → {frDate(selection.checkOut)}{" "}
+                    <span className="text-gray-500">
+                      ({selection.nights} nuit{selection.nights > 1 ? "s" : ""})
+                    </span>
+                    {selection.withCar && (
+                      <span className="text-gray-500"> · voiture</span>
+                    )}
                   </span>
-                  {selection.withCar && (
-                    <span className="text-gray-500"> · 🚗 voiture</span>
-                  )}
                 </span>
                 <span className="font-playfair text-lg text-sea-blue whitespace-nowrap">
                   ~{selection.total.toLocaleString("fr-FR")} €
@@ -200,7 +207,11 @@ export default function ContactSection() {
 
             {status === "success" ? (
               <div className="text-center py-12">
-                <div className="text-5xl mb-4">✅</div>
+                <div className="flex justify-center mb-4">
+                  <span className="w-14 h-14 rounded-full bg-gold/15 text-gold flex items-center justify-center">
+                    <Icon name="check" size={28} strokeWidth={2} />
+                  </span>
+                </div>
                 <p className="font-playfair text-xl text-sea-blue font-semibold mb-2">
                   Demande envoyée !
                 </p>

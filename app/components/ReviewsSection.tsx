@@ -79,9 +79,8 @@ export default function ReviewsSection() {
               href={AIRBNB_REVIEWS_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="group flex items-center gap-3 bg-white rounded-full pl-5 pr-6 py-3 shadow-md hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5"
+              className="group flex items-center gap-3 bg-white rounded-full pl-6 pr-6 py-3 shadow-md hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5"
             >
-              <span className="text-xl">🏠</span>
               <span className="text-left">
                 <span className="block font-lato text-xs text-gray-500 uppercase tracking-wider">
                   Airbnb
@@ -102,9 +101,8 @@ export default function ReviewsSection() {
               href={TURO_REVIEWS_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="group flex items-center gap-3 bg-white rounded-full pl-5 pr-6 py-3 shadow-md hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5"
+              className="group flex items-center gap-3 bg-white rounded-full pl-6 pr-6 py-3 shadow-md hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5"
             >
-              <span className="text-xl">🚗</span>
               <span className="text-left">
                 <span className="block font-lato text-xs text-gray-500 uppercase tracking-wider">
                   Turo

@@ -46,18 +46,30 @@ export default function HeroSection() {
           </span>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        <div className="flex flex-wrap gap-3 justify-center">
           <a
             href="#reserver"
-            className="bg-gold hover:bg-gold-light text-white px-8 py-4 rounded font-lato font-bold tracking-wider uppercase text-sm transition-all duration-200 shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+            className="bg-gold hover:bg-gold-light text-white px-7 py-3.5 rounded font-lato font-bold tracking-wider uppercase text-sm transition-all duration-200 shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+          >
+            Réserver
+          </a>
+          <a
+            href="#disponibilites"
+            className="bg-white/15 backdrop-blur-sm hover:bg-white/25 border border-white/50 text-white px-7 py-3.5 rounded font-lato font-bold tracking-wider uppercase text-sm transition-all duration-200"
           >
             Voir les disponibilités
           </a>
           <a
-            href="#villa"
-            className="bg-white/15 backdrop-blur-sm hover:bg-white/25 border border-white/50 text-white px-8 py-4 rounded font-lato font-bold tracking-wider uppercase text-sm transition-all duration-200"
+            href="#galerie"
+            className="bg-white/15 backdrop-blur-sm hover:bg-white/25 border border-white/50 text-white px-7 py-3.5 rounded font-lato font-bold tracking-wider uppercase text-sm transition-all duration-200"
           >
-            Découvrir la villa
+            Voir les photos
+          </a>
+          <a
+            href="#visite-virtuelle"
+            className="bg-white/15 backdrop-blur-sm hover:bg-white/25 border border-white/50 text-white px-7 py-3.5 rounded font-lato font-bold tracking-wider uppercase text-sm transition-all duration-200"
+          >
+            Visite virtuelle
           </a>
         </div>
       </div>

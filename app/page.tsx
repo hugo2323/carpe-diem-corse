@@ -3,6 +3,7 @@ import HeroSection from "./components/HeroSection";
 import HighlightsSection from "./components/HighlightsSection";
 import VillaSection from "./components/VillaSection";
 import GalleryPreview from "./components/GalleryPreview";
+import VirtualTourSection from "./components/VirtualTourSection";
 import AvailabilitySection from "./components/AvailabilitySection";
 import PricingCTA from "./components/PricingCTA";
 import CarSection from "./components/CarSection";
@@ -19,6 +20,7 @@ export default function Home() {
       <HighlightsSection />
       <VillaSection />
       <GalleryPreview />
+      <VirtualTourSection />
       <BookingProvider>
         <AvailabilitySection />
         <PricingCTA />

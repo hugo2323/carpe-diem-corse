@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { quote } from "@/lib/pricing";
 import { useBooking } from "./BookingProvider";
+import Icon from "./Icon";
 
 type SourceStatus = { name: string; configured: boolean; ok: boolean };
 type Availability = { blocked: string[]; sources: SourceStatus[] };
@@ -73,20 +74,6 @@ export default function AvailabilityCalendar() {
 
   const blocked = useMemo(() => new Set(data?.blocked ?? []), [data]);
 
-  const cells = useMemo(() => {
-    if (!cursor) return [];
-    const { y, m } = cursor;
-    const daysInMonth = new Date(y, m + 1, 0).getDate();
-    const firstWeekday = (new Date(y, m, 1).getDay() + 6) % 7;
-
-    const out: ({ day: number; date: string } | null)[] = [];
-    for (let i = 0; i < firstWeekday; i++) out.push(null);
-    for (let day = 1; day <= daysInMonth; day++) {
-      out.push({ day, date: ymd(y, m, day) });
-    }
-    return out;
-  }, [cursor]);
-
   const currentQuote = useMemo(
     () =>
       checkIn && checkOut && today
@@ -97,7 +84,7 @@ export default function AvailabilityCalendar() {
 
   if (!cursor || !today || minMonth === null) {
     return (
-      <div className="max-w-xl mx-auto h-80 rounded-2xl bg-gray-100 animate-pulse" />
+      <div className="max-w-3xl mx-auto h-80 rounded-2xl bg-gray-100 animate-pulse" />
     );
   }
 
@@ -127,7 +114,6 @@ export default function AvailabilityCalendar() {
       return;
     }
 
-    // On complète la sélection (checkIn déjà posé).
     // Clic sur une date <= arrivée : on redémarre depuis cette date.
     if (date <= checkIn!) {
       if (!isBlocked) {
@@ -146,8 +132,7 @@ export default function AvailabilityCalendar() {
       return;
     }
 
-    // Valide : `date` devient le jour de départ (peut être un jour d'arrivée
-    // d'un autre séjour, donc autorisé même s'il est "réservé").
+    // Valide : `date` devient le jour de départ.
     setCheckOut(date);
   };
 
@@ -173,15 +158,104 @@ export default function AvailabilityCalendar() {
     document.getElementById("reserver")?.scrollIntoView({ behavior: "smooth" });
   };
 
+  // --- Rendu d'une cellule jour ---
+  const renderCell = (date: string, day: number) => {
+    const isPast = date < today;
+    const isBlocked = blocked.has(date);
+    const isCheckIn = date === checkIn;
+    const isCheckOut = date === checkOut;
+    const isInRange =
+      !!checkIn && !!checkOut && date > checkIn && date < checkOut;
+    const isEndpoint = isCheckIn || isCheckOut;
+    const isAvailable = !isPast && !isBlocked;
+    const clickable = !isPast && (!isBlocked || (!!checkIn && !checkOut));
+
+    let cls: string;
+    if (isEndpoint) {
+      cls = "bg-gold text-white font-bold ring-2 ring-gold";
+    } else if (isInRange) {
+      cls = "bg-gold/20 text-sea-blue font-semibold";
+    } else if (isPast) {
+      cls = "text-gray-300";
+    } else if (isBlocked) {
+      cls = "bg-gray-100 text-gray-400 line-through";
+    } else {
+      cls =
+        "bg-gold/10 text-sea-blue font-semibold ring-1 ring-gold/30 hover:bg-gold/25";
+    }
+
+    return (
+      <button
+        type="button"
+        key={date}
+        onClick={() => handleDayClick(date, isPast, isBlocked)}
+        disabled={!clickable}
+        className={[
+          "aspect-square flex items-center justify-center rounded-lg font-lato text-sm transition-colors",
+          clickable ? "cursor-pointer" : "cursor-default",
+          cls,
+        ].join(" ")}
+        title={
+          isPast
+            ? undefined
+            : isEndpoint
+            ? isCheckIn
+              ? "Arrivée"
+              : "Départ"
+            : isAvailable
+            ? "Disponible — cliquez pour sélectionner"
+            : "Réservé"
+        }
+      >
+        {day}
+      </button>
+    );
+  };
+
+  // --- Rendu d'un mois complet ---
+  const renderMonth = (y: number, m: number) => {
+    const daysInMonth = new Date(y, m + 1, 0).getDate();
+    const firstWeekday = (new Date(y, m, 1).getDay() + 6) % 7;
+    const leading = Array.from({ length: firstWeekday });
+
+    return (
+      <div>
+        <p className="text-center font-playfair text-xl text-sea-blue mb-4">
+          {MONTHS_FR[m]} {y}
+        </p>
+        <div className="grid grid-cols-7 gap-1.5">
+          {WEEKDAYS_FR.map((d) => (
+            <div
+              key={d}
+              className="text-center font-lato text-[11px] font-bold uppercase tracking-wider text-gray-400 pb-1"
+            >
+              {d}
+            </div>
+          ))}
+          {leading.map((_, i) => (
+            <div key={`lead-${y}-${m}-${i}`} />
+          ))}
+          {Array.from({ length: daysInMonth }, (_, i) =>
+            renderCell(ymd(y, m, i + 1), i + 1)
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const nextIdx = curIdx + 1;
+  const nextY = Math.floor(nextIdx / 12);
+  const nextM = nextIdx % 12;
+
   const syncedNames = data?.sources.filter((s) => s.ok).map((s) => s.name) ?? [];
   const syncError = data?.sources.some((s) => s.configured && !s.ok) ?? false;
 
   return (
-    <div className="max-w-xl mx-auto">
+    <div className="max-w-3xl mx-auto">
       {/* Bandeau offre dernière minute */}
       <div className="mb-6 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-center">
         <p className="font-lato text-sm text-red-700 font-bold">
-          🔥 Offre dernière minute — jusqu&apos;à −40% sur la villa
+          Offre dernière minute — jusqu&apos;à −40% sur la villa
         </p>
         <p className="font-lato text-xs text-red-500 mt-0.5">
           −40% sur les 7 prochains jours · −20% sous 15 jours · −10% jusqu&apos;à
@@ -189,8 +263,8 @@ export default function AvailabilityCalendar() {
         </p>
       </div>
 
-      {/* En-tête : navigation mois */}
-      <div className="flex items-center justify-between mb-6">
+      {/* Navigation mois */}
+      <div className="flex items-center justify-between mb-5">
         <button
           type="button"
           onClick={() => step(-1)}
@@ -198,10 +272,10 @@ export default function AvailabilityCalendar() {
           aria-label="Mois précédent"
           className="w-10 h-10 flex items-center justify-center rounded-full border border-gray-200 text-sea-blue hover:bg-cream disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
         >
-          ‹
+          <span aria-hidden="true" className="text-lg">‹</span>
         </button>
-        <span className="font-playfair text-2xl text-sea-blue">
-          {MONTHS_FR[cursor.m]} {cursor.y}
+        <span className="font-lato text-xs uppercase tracking-[0.2em] text-gray-400">
+          Sélectionnez vos dates
         </span>
         <button
           type="button"
@@ -210,76 +284,14 @@ export default function AvailabilityCalendar() {
           aria-label="Mois suivant"
           className="w-10 h-10 flex items-center justify-center rounded-full border border-gray-200 text-sea-blue hover:bg-cream disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
         >
-          ›
+          <span aria-hidden="true" className="text-lg">›</span>
         </button>
       </div>
 
-      {/* Grille */}
-      <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
-        {WEEKDAYS_FR.map((d) => (
-          <div
-            key={d}
-            className="text-center font-lato text-xs font-bold uppercase tracking-wider text-gray-400 pb-2"
-          >
-            {d}
-          </div>
-        ))}
-
-        {cells.map((cell, i) => {
-          if (!cell) return <div key={`empty-${i}`} />;
-          const isPast = cell.date < today;
-          const isBlocked = blocked.has(cell.date);
-          const isCheckIn = cell.date === checkIn;
-          const isCheckOut = cell.date === checkOut;
-          const isInRange =
-            !!checkIn &&
-            !!checkOut &&
-            cell.date > checkIn &&
-            cell.date < checkOut;
-          const isEndpoint = isCheckIn || isCheckOut;
-          const isAvailable = !isPast && !isBlocked;
-          const clickable = !isPast && (!isBlocked || (!!checkIn && !checkOut));
-
-          let cls: string;
-          if (isEndpoint) {
-            cls = "bg-gold text-white font-bold ring-2 ring-gold";
-          } else if (isInRange) {
-            cls = "bg-gold/20 text-sea-blue font-semibold";
-          } else if (isPast) {
-            cls = "text-gray-300";
-          } else if (isBlocked) {
-            cls = "bg-gray-100 text-gray-400 line-through";
-          } else {
-            cls = "bg-gold/10 text-sea-blue font-semibold ring-1 ring-gold/30 hover:bg-gold/25";
-          }
-
-          return (
-            <button
-              type="button"
-              key={cell.date}
-              onClick={() => handleDayClick(cell.date, isPast, isBlocked)}
-              disabled={!clickable}
-              className={[
-                "aspect-square flex items-center justify-center rounded-lg font-lato text-sm transition-colors",
-                clickable ? "cursor-pointer" : "cursor-default",
-                cls,
-              ].join(" ")}
-              title={
-                isPast
-                  ? undefined
-                  : isEndpoint
-                  ? isCheckIn
-                    ? "Arrivée"
-                    : "Départ"
-                  : isAvailable
-                  ? "Disponible — cliquez pour sélectionner"
-                  : "Réservé"
-              }
-            >
-              {cell.day}
-            </button>
-          );
-        })}
+      {/* Deux mois côte à côte (1 seul sur mobile) */}
+      <div className="grid md:grid-cols-2 gap-6 md:gap-10">
+        <div>{renderMonth(cursor.y, cursor.m)}</div>
+        <div className="hidden md:block">{renderMonth(nextY, nextM)}</div>
       </div>
 
       {/* Légende */}
@@ -299,10 +311,10 @@ export default function AvailabilityCalendar() {
       </div>
 
       {/* Panneau de sélection / devis indicatif */}
-      <div className="mt-6 min-h-[1px]">
+      <div className="mt-6 max-w-xl mx-auto">
         {!checkIn && (
           <p className="text-center font-lato text-sm text-gray-500">
-            👆 Cliquez sur une date d&apos;arrivée puis une date de départ pour
+            Cliquez sur une date d&apos;arrivée puis une date de départ pour
             estimer votre séjour.
           </p>
         )}
@@ -357,7 +369,8 @@ export default function AvailabilityCalendar() {
                     onChange={(e) => setWithCar(e.target.checked)}
                     className="w-4 h-4 accent-gold"
                   />
-                  🚗 Voiture (Dacia Bigster)
+                  <Icon name="car" size={18} className="text-sea-blue" />
+                  Voiture (Dacia Bigster)
                 </span>
                 <span
                   className={
@@ -371,7 +384,7 @@ export default function AvailabilityCalendar() {
 
             {currentQuote.villaSaved > 0 && (
               <p className="mt-3 text-center font-lato text-sm text-red-600 font-semibold">
-                🔥 Offre dernière minute : vous économisez ~
+                Offre dernière minute : vous économisez ~
                 {currentQuote.villaSaved.toLocaleString("fr-FR")} € sur la villa
               </p>
             )}
@@ -409,8 +422,8 @@ export default function AvailabilityCalendar() {
             </div>
 
             <p className="font-lato text-[11px] text-gray-400 mt-3 text-center">
-              Tarif estimatif hors frais de ménage et taxe de séjour — le tarif
-              exact vous est confirmé sous 24h.
+              Tarif estimatif hors frais de ménage et taxe de séjour — demande de
+              disponibilité, le tarif exact vous est confirmé sous 24h.
             </p>
           </div>
         )}

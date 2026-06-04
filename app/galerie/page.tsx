@@ -5,6 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import Lightbox from "../components/Lightbox";
+import Icon from "../components/Icon";
 
 type FilterType = "tous" | "exterieur" | "interieur";
 
@@ -127,8 +129,8 @@ export default function GaleriePage() {
                 className="object-cover group-hover:scale-105 transition-transform duration-500"
               />
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-300 flex items-center justify-center">
-                <span className="text-white text-4xl opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  ⊕
+                <span className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <Icon name="expand" size={30} />
                 </span>
               </div>
             </div>
@@ -145,47 +147,13 @@ export default function GaleriePage() {
         </div>
       </div>
 
-      {/* Lightbox */}
-      {lightboxIndex !== null && (
-        <div
-          className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center"
-          onClick={closeLightbox}
-        >
-          <button
-            className="absolute top-4 right-4 text-white text-4xl hover:text-gold transition-colors"
-            onClick={closeLightbox}
-          >
-            ×
-          </button>
-          <button
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-white text-4xl hover:text-gold transition-colors p-4"
-            onClick={(e) => { e.stopPropagation(); prev(); }}
-          >
-            ‹
-          </button>
-          <div
-            className="relative max-w-5xl max-h-[85vh] w-full h-full mx-16"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <Image
-              src={filtered[lightboxIndex].src}
-              alt={filtered[lightboxIndex].alt}
-              fill
-              className="object-contain"
-              quality={95}
-            />
-          </div>
-          <button
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-white text-4xl hover:text-gold transition-colors p-4"
-            onClick={(e) => { e.stopPropagation(); next(); }}
-          >
-            ›
-          </button>
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/60 font-lato text-sm">
-            {lightboxIndex + 1} / {filtered.length} — {filtered[lightboxIndex].alt}
-          </div>
-        </div>
-      )}
+      <Lightbox
+        photos={filtered}
+        index={lightboxIndex}
+        onClose={closeLightbox}
+        onPrev={prev}
+        onNext={next}
+      />
 
       <Footer />
     </div>

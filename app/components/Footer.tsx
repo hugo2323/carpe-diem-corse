@@ -1,3 +1,5 @@
+import Icon from "./Icon";
+
 export default function Footer() {
   return (
     <footer className="bg-gray-900 text-white py-12">
@@ -50,32 +52,32 @@ export default function Footer() {
                 href="https://www.airbnb.fr/rooms/24533933"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 font-lato text-gray-400 hover:text-gold transition-colors duration-200 text-sm"
+                className="flex items-center gap-2.5 font-lato text-gray-400 hover:text-gold transition-colors duration-200 text-sm"
               >
-                <span className="text-base">🏠</span>
+                <Icon name="home" size={18} className="flex-shrink-0" />
                 Airbnb
               </a>
               <a
                 href="https://www.google.com/maps/place/Villa+vue+mer+6%2F8+personnes+(SCI+horizon)/@41.8260299,8.7846614,17z"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 font-lato text-gray-400 hover:text-gold transition-colors duration-200 text-sm"
+                className="flex items-center gap-2.5 font-lato text-gray-400 hover:text-gold transition-colors duration-200 text-sm"
               >
-                <span className="text-base">📍</span>
+                <Icon name="pin" size={18} className="flex-shrink-0" />
                 Voir sur Google Maps
               </a>
               <a
                 href="mailto:hugo.valette@outlook.com"
-                className="flex items-center gap-2 font-lato text-gray-400 hover:text-gold transition-colors duration-200 text-sm"
+                className="flex items-center gap-2.5 font-lato text-gray-400 hover:text-gold transition-colors duration-200 text-sm"
               >
-                <span className="text-base">✉️</span>
+                <Icon name="mail" size={18} className="flex-shrink-0" />
                 hugo.valette@outlook.com
               </a>
               <a
                 href="tel:+33674256336"
-                className="flex items-center gap-2 font-lato text-gray-400 hover:text-gold transition-colors duration-200 text-sm"
+                className="flex items-center gap-2.5 font-lato text-gray-400 hover:text-gold transition-colors duration-200 text-sm"
               >
-                <span className="text-base">📞</span>
+                <Icon name="phone" size={18} className="flex-shrink-0" />
                 06.74.25.63.36
               </a>
             </div>
