@@ -1,26 +1,26 @@
-// Moteur de TARIF INDICATIF de la villa, avec :
-// - remise « dernière minute » dégressive (selon la date d'arrivée) ;
-// - offre « pack véhicule » : ajouter le véhicule au séjour donne 5% de remise
-//   sur la VILLA uniquement (le prix du véhicule reste « sur demande »).
+// Moteur de TARIF INDICATIF de la villa.
 //
-// Règle de cumul ACTUELLE : on n'additionne pas les remises, on applique la
-// MEILLEURE des deux (dernière minute vs pack véhicule). La structure est prête
-// pour d'autres règles de cumul à l'avenir (voir resolveVillaDiscount).
+// Remises :
+// - « dernière minute » DÉGRESSIVE et calculée PAR NUIT selon la proximité de
+//   chaque nuit avec aujourd'hui : semaine 1 (J+0→6) −40%, semaine 2 (J+7→13)
+//   −20%, semaine 3 (J+14→20) −10%, au-delà 0%.
+// - « pack véhicule » : ajouter le véhicule donne −5% calculé sur le TARIF DE
+//   BASE (avant remise dernière minute). Cumulable avec la dernière minute.
+//
+// Total villa = base − (remises dernière minute par nuit) − (5% de la base si
+// véhicule). Le prix du véhicule lui-même reste « sur demande ».
 
 type RateSet = { veryHigh: number; high: number; mid: number; low: number };
 
 // Tarif villa par nuit (EUR) — confirmés par le propriétaire.
 const VILLA: RateSet = { veryHigh: 450, high: 320, mid: 220, low: 160 };
 
-// Tarif véhicule par nuit (EUR) — utilisé uniquement si VEHICLE_PRICING_MODE
-// passe à "dynamic". En mode "on_request", le prix du véhicule n'est pas affiché
-// (sur demande) et n'entre pas dans le total.
+// Tarif véhicule par nuit — utilisé seulement si VEHICLE_PRICING_MODE="dynamic".
 const CAR: RateSet = { veryHigh: 80, high: 70, mid: 60, low: 50 };
 
-// Mode de tarification du véhicule.
 export const VEHICLE_PRICING_MODE: "on_request" | "dynamic" = "on_request";
 
-// Remise accordée quand le véhicule est ajouté au séjour (sur la villa).
+// Remise accordée sur la base villa quand le véhicule est ajouté au séjour.
 export const VEHICLE_PACK_DISCOUNT_PCT = 5;
 
 type Tier = keyof RateSet;
@@ -46,12 +46,13 @@ function rateForDate(set: RateSet, isoDate: string): number {
   return set[tierForDate(isoDate)];
 }
 
-// --- Remise dernière minute (sur la villa, selon la date d'arrivée) ---
-const LAST_MINUTE_TIERS = [
-  { maxDaysAhead: 6, pct: 40 },
-  { maxDaysAhead: 14, pct: 20 },
+// --- Remise dernière minute dégressive, par NUIT ---
+// Paliers par semaine de proximité (en jours d'écart entre la nuit et aujourd'hui).
+const NIGHT_DISCOUNT_TIERS = [
+  { maxDays: 6, pct: 40 }, // semaine 1
+  { maxDays: 13, pct: 20 }, // semaine 2
+  { maxDays: 20, pct: 10 }, // semaine 3
 ];
-const END_OF_MONTH_PCT = 10;
 
 function daysBetween(fromIso: string, toIso: string): number {
   const a = Date.parse(`${fromIso}T00:00:00Z`);
@@ -60,52 +61,32 @@ function daysBetween(fromIso: string, toIso: string): number {
   return Math.round((b - a) / 86400000);
 }
 
-export function lastMinuteDiscountPct(checkIn: string, today: string): number {
-  const days = daysBetween(today, checkIn);
+export function nightDiscountPct(nightIso: string, today: string): number {
+  const days = daysBetween(today, nightIso);
   if (Number.isNaN(days) || days < 0) return 0;
-  for (const t of LAST_MINUTE_TIERS) {
-    if (days <= t.maxDaysAhead) return t.pct;
+  for (const t of NIGHT_DISCOUNT_TIERS) {
+    if (days <= t.maxDays) return t.pct;
   }
-  if (checkIn.slice(0, 7) === today.slice(0, 7)) return END_OF_MONTH_PCT;
   return 0;
 }
 
-export type DiscountKind = "none" | "last_minute" | "vehicle_pack";
-
-// Détermine la remise villa appliquée à partir des remises candidates.
-// Règle actuelle : pas de cumul -> on garde la meilleure. À faire évoluer ici
-// si une règle de cumul est décidée plus tard.
-function resolveVillaDiscount(
-  lastMinutePct: number,
-  vehiclePackPct: number
-): { pct: number; kind: DiscountKind } {
-  let pct = 0;
-  let kind: DiscountKind = "none";
-  if (lastMinutePct > 0) {
-    pct = lastMinutePct;
-    kind = "last_minute";
-  }
-  if (vehiclePackPct > pct) {
-    pct = vehiclePackPct;
-    kind = "vehicle_pack";
-  }
-  return { pct, kind };
-}
+// Une ligne de remise dernière minute (un palier présent dans le séjour).
+export type LastMinuteTier = { pct: number; nights: number; saved: number };
 
 export type Quote = {
   nights: number;
   villaBase: number; // villa plein tarif
-  lastMinutePct: number; // remise dernière minute candidate
-  vehiclePackPct: number; // remise pack véhicule candidate (5 si véhicule, sinon 0)
-  villaDiscountPct: number; // remise réellement appliquée
-  villaDiscountKind: DiscountKind; // origine de la remise appliquée
-  villaTotal: number; // villa après remise
-  villaSaved: number; // économie sur la villa
+  lastMinuteTiers: LastMinuteTier[]; // paliers présents, triés −40 → −10
+  lastMinuteSaved: number; // total remises dernière minute
+  vehiclePackPct: number; // 5 si véhicule ajouté, sinon 0
+  vehicleSaved: number; // 5% de la base si véhicule
+  totalSaved: number; // lastMinuteSaved + vehicleSaved
+  villaTotal: number; // villa après toutes remises
   withCar: boolean;
-  vehicleOnRequest: boolean; // true => prix véhicule non affiché (sur demande)
-  carTotal: number | null; // null si sur demande
-  total: number; // villa après remise (+ véhicule si tarification dynamique)
-  avgPerNight: number; // moyenne villa plein tarif par nuit
+  vehicleOnRequest: boolean; // prix véhicule « sur demande »
+  carTotal: number | null;
+  total: number;
+  avgPerNight: number;
 };
 
 export function quote(
@@ -123,22 +104,43 @@ export function quote(
   let villaBase = 0;
   let carBase = 0;
   let nights = 0;
+  // Cumul des remises dernière minute par palier (%).
+  const tierAcc: Record<number, { nights: number; saved: number }> = {};
+
   for (let d = new Date(start); d < end; d.setUTCDate(d.getUTCDate() + 1)) {
     const iso = d.toISOString().slice(0, 10);
-    villaBase += rateForDate(VILLA, iso);
+    const nightly = rateForDate(VILLA, iso);
+    villaBase += nightly;
     carBase += rateForDate(CAR, iso);
     nights++;
+
+    const pct = today ? nightDiscountPct(iso, today) : 0;
+    if (pct > 0) {
+      const acc = (tierAcc[pct] ??= { nights: 0, saved: 0 });
+      acc.nights++;
+      acc.saved += (nightly * pct) / 100;
+    }
   }
 
-  const lastMinutePct = today ? lastMinuteDiscountPct(checkIn, today) : 0;
-  const vehiclePackPct = withCar ? VEHICLE_PACK_DISCOUNT_PCT : 0;
-  const { pct: villaDiscountPct, kind: villaDiscountKind } = resolveVillaDiscount(
-    lastMinutePct,
-    vehiclePackPct
-  );
+  const lastMinuteTiers: LastMinuteTier[] = Object.keys(tierAcc)
+    .map((k) => Number(k))
+    .sort((a, b) => b - a)
+    .map((pct) => ({
+      pct,
+      nights: tierAcc[pct].nights,
+      saved: Math.round(tierAcc[pct].saved),
+    }));
 
-  const villaTotal = Math.round(villaBase * (1 - villaDiscountPct / 100));
-  const villaSaved = villaBase - villaTotal;
+  const lastMinuteSaved = lastMinuteTiers.reduce((s, t) => s + t.saved, 0);
+
+  // Remise pack véhicule : 5% de la base (avant remise dernière minute).
+  const vehiclePackPct = withCar ? VEHICLE_PACK_DISCOUNT_PCT : 0;
+  const vehicleSaved = withCar
+    ? Math.round((villaBase * VEHICLE_PACK_DISCOUNT_PCT) / 100)
+    : 0;
+
+  const totalSaved = lastMinuteSaved + vehicleSaved;
+  const villaTotal = Math.max(0, villaBase - totalSaved);
 
   const vehicleOnRequest = VEHICLE_PRICING_MODE === "on_request";
   const carTotal = vehicleOnRequest ? null : carBase;
@@ -146,12 +148,12 @@ export function quote(
   return {
     nights,
     villaBase,
-    lastMinutePct,
+    lastMinuteTiers,
+    lastMinuteSaved,
     vehiclePackPct,
-    villaDiscountPct,
-    villaDiscountKind,
+    vehicleSaved,
+    totalSaved,
     villaTotal,
-    villaSaved,
     withCar,
     vehicleOnRequest,
     carTotal,

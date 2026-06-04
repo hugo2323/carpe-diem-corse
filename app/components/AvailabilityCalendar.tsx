@@ -149,8 +149,8 @@ export default function AvailabilityCalendar() {
       checkOut,
       nights: currentQuote.nights,
       villaBase: currentQuote.villaBase,
-      villaDiscountPct: currentQuote.villaDiscountPct,
-      villaDiscountKind: currentQuote.villaDiscountKind,
+      lastMinuteSaved: currentQuote.lastMinuteSaved,
+      vehicleSaved: currentQuote.vehicleSaved,
       villaTotal: currentQuote.villaTotal,
       withCar: currentQuote.withCar,
       vehicleOnRequest: currentQuote.vehicleOnRequest,
@@ -254,15 +254,22 @@ export default function AvailabilityCalendar() {
 
   return (
     <div className="max-w-3xl mx-auto">
-      {/* Bandeau offre dernière minute */}
-      <div className="mb-6 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-center">
-        <p className="font-lato text-sm text-red-700 font-bold">
-          Offre dernière minute — jusqu&apos;à −40% sur la villa
+      {/* Offre dernière minute dégressive — présentation sobre, 3 paliers distincts */}
+      <div className="mb-6 text-center">
+        <p className="font-lato text-[11px] uppercase tracking-[0.2em] text-gray-400 mb-2.5">
+          Offre dernière minute dégressive
         </p>
-        <p className="font-lato text-xs text-red-500 mt-0.5">
-          −40% sur les 7 prochains jours · −20% sous 15 jours · −10% jusqu&apos;à
-          la fin du mois
-        </p>
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <span className="rounded-full border border-gold/50 bg-gold/5 text-sea-blue text-xs font-semibold px-3.5 py-1.5">
+            −40% · semaine 1
+          </span>
+          <span className="rounded-full border border-gold/30 bg-gold/5 text-sea-blue text-xs font-semibold px-3.5 py-1.5">
+            −20% · semaine 2
+          </span>
+          <span className="rounded-full border border-gold/20 bg-gold/5 text-sea-blue text-xs font-semibold px-3.5 py-1.5">
+            −10% · semaine 3
+          </span>
+        </div>
       </div>
 
       {/* Navigation mois */}
@@ -350,7 +357,7 @@ export default function AvailabilityCalendar() {
                 </span>
                 <span
                   className={
-                    currentQuote.villaDiscountPct > 0
+                    currentQuote.totalSaved > 0
                       ? "text-gray-400 line-through"
                       : "text-sea-blue font-semibold"
                   }
@@ -359,26 +366,39 @@ export default function AvailabilityCalendar() {
                 </span>
               </div>
 
-              {currentQuote.villaDiscountPct > 0 && (
-                <>
-                  <div className="flex items-center justify-between text-gold">
-                    <span>
-                      {currentQuote.villaDiscountKind === "vehicle_pack"
-                        ? "Remise pack véhicule"
-                        : "Offre dernière minute"}{" "}
-                      −{currentQuote.villaDiscountPct}%
+              {/* Remises dernière minute, distinctes par palier */}
+              {currentQuote.lastMinuteTiers.map((t) => (
+                <div
+                  key={t.pct}
+                  className="flex items-center justify-between text-gold"
+                >
+                  <span>
+                    Dernière minute −{t.pct}%{" "}
+                    <span className="text-gold/70">
+                      · {t.nights} nuit{t.nights > 1 ? "s" : ""}
                     </span>
-                    <span>
-                      −{currentQuote.villaSaved.toLocaleString("fr-FR")} €
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-700">Tarif villa après remise</span>
-                    <span className="text-sea-blue font-semibold">
-                      ~{currentQuote.villaTotal.toLocaleString("fr-FR")} €
-                    </span>
-                  </div>
-                </>
+                  </span>
+                  <span>−{t.saved.toLocaleString("fr-FR")} €</span>
+                </div>
+              ))}
+
+              {/* Remise pack véhicule (5% de la base, cumulable) */}
+              {currentQuote.vehicleSaved > 0 && (
+                <div className="flex items-center justify-between text-gold">
+                  <span>Remise pack véhicule −5%</span>
+                  <span>−{currentQuote.vehicleSaved.toLocaleString("fr-FR")} €</span>
+                </div>
+              )}
+
+              {currentQuote.totalSaved > 0 && (
+                <div className="flex items-center justify-between pt-1 border-t border-gold/10">
+                  <span className="text-gray-700 font-semibold">
+                    Tarif villa après remise
+                  </span>
+                  <span className="text-sea-blue font-semibold">
+                    ~{currentQuote.villaTotal.toLocaleString("fr-FR")} €
+                  </span>
+                </div>
               )}
             </div>
 

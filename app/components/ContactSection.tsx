@@ -38,14 +38,12 @@ export default function ContactSection() {
   // calendrier de disponibilités (bouton « Demander ces dates »).
   useEffect(() => {
     if (!selection) return;
-    const discountPart =
-      selection.villaDiscountPct > 0
-        ? ` Remise ${
-            selection.villaDiscountKind === "vehicle_pack"
-              ? "pack véhicule"
-              : "dernière minute"
-          } −${selection.villaDiscountPct}% incluse.`
-        : "";
+    const remises: string[] = [];
+    if (selection.lastMinuteSaved > 0) remises.push("dernière minute (dégressive)");
+    if (selection.withCar) remises.push("pack véhicule −5%");
+    const discountPart = remises.length
+      ? ` Remises incluses : ${remises.join(" et ")}.`
+      : "";
     const vehiclePart = selection.withCar
       ? " Je souhaite ajouter le véhicule au séjour (sur demande, sous réserve de disponibilité)."
       : "";
