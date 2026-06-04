@@ -53,7 +53,7 @@ export default function ContactSection() {
     const timeLabel: Record<string, string> = {
       last_minute: "dernière minute dégressive",
       length_of_stay: "réduction séjour",
-      gap: "offre créneau",
+      gap: "offre spéciale",
     };
     const remises: string[] = [];
     if (selection.timeSaved > 0 && timeLabel[selection.timeDiscountKind])

@@ -33,17 +33,14 @@ export function lengthOfStayDiscountPct(nights: number): number {
   return 0;
 }
 
-// Remise « créneau » : très agressive sur les courts trous coincés entre deux
-// réservations (nuits orphelines difficiles à vendre). Plus le trou est court,
-// plus la remise est forte. Appliquée seulement quand le séjour comble
-// EXACTEMENT un trou (détecté côté calendrier, qui connaît les dispos).
-const GAP_DISCOUNT_TIERS = [
-  { maxNights: 2, pct: 40 }, // trou 1-2 nuits : quasi invendable
-  { maxNights: 6, pct: 30 }, // trou 3-6 nuits
-];
+// Remise sur les créneaux orphelins coincés entre deux réservations (difficiles
+// à vendre). Appliquée seulement quand le séjour comble EXACTEMENT un trou de 1
+// à 9 nuits (détecté côté calendrier). Côté client, libellé neutre « Offre
+// spéciale » (on ne dit pas « trou »).
+const GAP_MAX_NIGHTS = 9;
+const GAP_DISCOUNT_PCT = 40;
 export function gapDiscountPctForNights(gapNights: number): number {
-  for (const t of GAP_DISCOUNT_TIERS) if (gapNights <= t.maxNights) return t.pct;
-  return 0;
+  return gapNights >= 1 && gapNights <= GAP_MAX_NIGHTS ? GAP_DISCOUNT_PCT : 0;
 }
 
 // Règles de réservation.

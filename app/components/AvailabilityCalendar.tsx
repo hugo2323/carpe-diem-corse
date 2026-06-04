@@ -460,13 +460,7 @@ export default function AvailabilityCalendar() {
 
               {currentQuote.timeDiscountKind === "gap" && (
                 <div className="flex items-center justify-between text-gold">
-                  <span>
-                    Offre créneau −{currentQuote.gapDiscountPct}%{" "}
-                    <span className="text-gold/70">
-                      · comble un trou de {currentQuote.nights} nuit
-                      {currentQuote.nights > 1 ? "s" : ""}
-                    </span>
-                  </span>
+                  <span>Offre spéciale −{currentQuote.gapDiscountPct}%</span>
                   <span>−{currentQuote.timeSaved.toLocaleString("fr-FR")} €</span>
                 </div>
               )}
