@@ -25,8 +25,8 @@ export const VEHICLE_PACK_DISCOUNT_PCT = 5;
 
 // Remise à la durée de séjour (calée sur les réglages Airbnb : semaine / mois).
 const LENGTH_OF_STAY_DISCOUNTS = [
-  { minNights: 28, pct: 20 }, // 28 nuits et + (mensuel)
-  { minNights: 7, pct: 10 }, // 7 nuits et + (hebdo)
+  { minNights: 28, pct: 25 }, // 28 nuits et + (mensuel)
+  { minNights: 7, pct: 15 }, // 7 nuits et + (hebdo)
 ];
 export function lengthOfStayDiscountPct(nights: number): number {
   for (const d of LENGTH_OF_STAY_DISCOUNTS) if (nights >= d.minNights) return d.pct;
@@ -38,9 +38,8 @@ export function lengthOfStayDiscountPct(nights: number): number {
 // plus la remise est forte. Appliquée seulement quand le séjour comble
 // EXACTEMENT un trou (détecté côté calendrier, qui connaît les dispos).
 const GAP_DISCOUNT_TIERS = [
-  { maxNights: 2, pct: 40 },
-  { maxNights: 4, pct: 30 },
-  { maxNights: 6, pct: 20 },
+  { maxNights: 2, pct: 40 }, // trou 1-2 nuits : quasi invendable
+  { maxNights: 6, pct: 30 }, // trou 3-6 nuits
 ];
 export function gapDiscountPctForNights(gapNights: number): number {
   for (const t of GAP_DISCOUNT_TIERS) if (gapNights <= t.maxNights) return t.pct;
@@ -49,7 +48,7 @@ export function gapDiscountPctForNights(gapNights: number): number {
 
 // Règles de réservation.
 export const MIN_LEAD_DAYS = 1; // délai minimum avant l'arrivée (pas le jour même)
-export const DEFAULT_MIN_NIGHTS = 3;
+export const DEFAULT_MIN_NIGHTS = 1; // hors saison : pas de minimum (1 nuit OK)
 // Séjour minimum variable selon la saison (date d'arrivée).
 const MIN_STAY_PERIODS = [
   { from: "07-14", to: "08-24", nights: 7 }, // très haute saison

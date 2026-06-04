@@ -322,7 +322,7 @@ export default function AvailabilityCalendar() {
           </span>
         </div>
         <p className="font-lato text-[11px] text-gray-400 mt-2.5">
-          Réduction séjour : −10% dès 7 nuits · −20% dès 28 nuits
+          Réduction séjour : −15% dès 7 nuits · −25% dès 28 nuits
         </p>
       </div>
 
@@ -380,7 +380,7 @@ export default function AvailabilityCalendar() {
             Cliquez sur une date d&apos;arrivée puis une date de départ pour
             estimer votre séjour.{" "}
             <span className="text-gray-400">
-              Séjour minimum 3 à 7 nuits selon la période.
+              Séjour minimum jusqu&apos;à 7 nuits en haute saison.
             </span>
           </p>
         )}
