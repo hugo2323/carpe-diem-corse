@@ -103,7 +103,7 @@ export default function AvailabilityCalendar() {
       addDaysIso(ci, -1) < min || blocked.has(addDaysIso(ci, -1));
     const rightWall = blocked.has(co);
     if (!(leftWall && rightWall)) return 0;
-    return gapDiscountPctForNights(nightsBetween(ci, co));
+    return gapDiscountPctForNights(nightsBetween(ci, co), ci);
   };
 
   // Longueur (en nuits) du créneau libre continu qui contient `night`, borné
@@ -167,7 +167,7 @@ export default function AvailabilityCalendar() {
 
       const checkIn = r.start;
       const checkOut = addDaysIso(r.end, 1);
-      const pct = gapDiscountPctForNights(nights);
+      const pct = gapDiscountPctForNights(nights, checkIn);
       const q = quote(checkIn, checkOut, false, today, pct);
       const qc = quote(checkIn, checkOut, true, today, pct);
       if (!q) continue;

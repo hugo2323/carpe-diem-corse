@@ -37,10 +37,18 @@ export function lengthOfStayDiscountPct(nights: number): number {
 // à vendre). Appliquée seulement quand le séjour comble EXACTEMENT un trou de 1
 // à 9 nuits (détecté côté calendrier). Côté client, libellé neutre « Offre
 // spéciale » (on ne dit pas « trou »).
+// - trou 1-3 nuits  : −40% partout (quasi invendable)
+// - trou 4-9 nuits  : −20% en HAUTE saison (ça se vend), −40% hors saison
 const GAP_MAX_NIGHTS = 9;
-const GAP_DISCOUNT_PCT = 40;
-export function gapDiscountPctForNights(gapNights: number): number {
-  return gapNights >= 1 && gapNights <= GAP_MAX_NIGHTS ? GAP_DISCOUNT_PCT : 0;
+export function gapDiscountPctForNights(
+  gapNights: number,
+  checkInIso?: string
+): number {
+  if (gapNights < 1 || gapNights > GAP_MAX_NIGHTS) return 0;
+  if (gapNights <= 3) return 40;
+  const t = checkInIso ? tierForDate(checkInIso) : "low";
+  const highSeason = t === "veryHigh" || t === "high";
+  return highSeason ? 20 : 40;
 }
 
 // Frais de ménage : forfait réglé sur place auprès de Kalypso Conciergerie.
