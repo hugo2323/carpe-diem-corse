@@ -75,6 +75,57 @@ export default function CarSection() {
             </div>
           ))}
         </div>
+
+        {/* Guide de réservation du véhicule (via Turo) */}
+        <div className="mt-16 bg-cream rounded-2xl p-8 md:p-10">
+          <div className="text-center mb-8">
+            <h3 className="font-playfair text-2xl md:text-3xl text-sea-blue mb-2">
+              Comment réserver le véhicule
+            </h3>
+            <p className="font-lato text-gray-600 text-sm">
+              La location se fait via Turo — assurance et assistance incluses.
+              Nous vous accompagnons à chaque étape.
+            </p>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              {
+                t: "Réservez votre séjour",
+                d: "Faites votre demande pour la villa et indiquez que vous souhaitez le véhicule.",
+              },
+              {
+                t: "Créez un compte Turo",
+                d: "Inscription gratuite sur Turo. L'assurance et l'assistance sont comprises.",
+              },
+              {
+                t: "Recevez le lien",
+                d: "Nous vous envoyons le lien du véhicule au tarif convenu — celui affiché sur le site.",
+              },
+              {
+                t: "Validez & profitez",
+                d: "Vous réglez la voiture sur Turo en toute sécurité. Elle vous attend à la villa.",
+              },
+            ].map((step, i) => (
+              <div key={step.t} className="text-center">
+                <div className="w-10 h-10 mx-auto mb-4 rounded-full bg-gold text-white flex items-center justify-center font-playfair text-lg">
+                  {i + 1}
+                </div>
+                <h4 className="font-lato text-sm font-bold text-sea-blue mb-2">
+                  {step.t}
+                </h4>
+                <p className="font-lato text-xs text-gray-600 leading-relaxed">
+                  {step.d}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          <p className="font-lato text-[11px] text-gray-400 text-center mt-8">
+            Tarif du véhicule indicatif, ajusté sur Turo pour correspondre au
+            montant affiché. Sous réserve de disponibilité.
+          </p>
+        </div>
       </div>
     </section>
   );

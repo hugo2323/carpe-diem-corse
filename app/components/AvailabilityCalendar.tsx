@@ -611,8 +611,9 @@ export default function AvailabilityCalendar() {
                   </p>
                   {withCar && (
                     <p className="font-lato text-xs text-gray-500 mt-2">
-                      Véhicule ajouté au séjour. Sous réserve de disponibilité du
-                      véhicule.
+                      Réservation du véhicule via Turo (assurance et assistance
+                      incluses) — nous vous accompagnons. Sous réserve de
+                      disponibilité.
                     </p>
                   )}
                 </div>
@@ -715,15 +716,13 @@ export default function AvailabilityCalendar() {
         </div>
       )}
 
-      {/* État de la synchro */}
+      {/* État du calendrier (neutre, sans nommer les plateformes) */}
       <p className="text-center font-lato text-xs text-gray-400 mt-5">
-        {failed
-          ? "Disponibilités indicatives — synchronisation momentanément indisponible."
+        {failed || syncError
+          ? "Disponibilités indicatives — confirmées sous 24h."
           : syncedNames.length > 0
-          ? `Synchronisé avec ${syncedNames.join(" et ")} — mis à jour automatiquement.`
-          : syncError
-          ? "Disponibilités indicatives — synchronisation momentanément indisponible."
-          : "Calendrier en cours de configuration."}
+          ? "Disponibilités mises à jour en continu."
+          : "Disponibilités indicatives — confirmées sous 24h."}
       </p>
     </div>
   );

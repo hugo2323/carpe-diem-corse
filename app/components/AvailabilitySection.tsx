@@ -13,7 +13,7 @@ export default function AvailabilitySection() {
           </h2>
           <div className="w-20 h-0.5 bg-gold mx-auto mb-6" />
           <p className="font-lato text-gray-600 text-lg">
-            Disponibilités de la villa synchronisées depuis Airbnb et Abritel.
+            Consultez les disponibilités de la villa et estimez votre séjour.
           </p>
         </div>
 
