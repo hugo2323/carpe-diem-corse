@@ -17,3 +17,7 @@ export const GOOGLE_MAPS_PLACE_URL =
 
 // Itinéraire vers la villa (coordonnées exactes pour une navigation fiable).
 export const GOOGLE_MAPS_DIRECTIONS_URL = `https://www.google.com/maps/dir/?api=1&destination=${VILLA_COORDS.lat},${VILLA_COORDS.lng}`;
+
+// Annonce Turo de la Dacia Bigster (réservation/paiement du véhicule).
+export const TURO_LISTING_URL =
+  "https://turo.com/fr/fr/location-suv/france/undefined/dacia/bigster-hybrid/3517110";

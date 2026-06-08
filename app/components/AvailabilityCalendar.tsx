@@ -9,6 +9,8 @@ import {
   CLEANING_FEE,
 } from "@/lib/pricing";
 import { useBooking } from "./BookingProvider";
+import { TURO_LISTING_URL } from "@/lib/location";
+import { trackEvent } from "@/lib/gtag";
 import Icon from "./Icon";
 
 type SourceStatus = { name: string; configured: boolean; ok: boolean };
@@ -616,6 +618,19 @@ export default function AvailabilityCalendar() {
                       disponibilité.
                     </p>
                   )}
+                  <a
+                    href={TURO_LISTING_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      trackEvent("click_turo");
+                    }}
+                    className="font-lato text-xs font-bold text-gold hover:text-sea-blue transition-colors mt-2 inline-flex items-center gap-1.5"
+                  >
+                    <Icon name="car" size={13} className="flex-shrink-0" />
+                    Voir le véhicule sur Turo →
+                  </a>
                 </div>
               </div>
             </label>

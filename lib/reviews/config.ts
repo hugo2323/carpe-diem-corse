@@ -33,5 +33,4 @@ export const AIRBNB_VERIFIED_SUMMARY = {
 // proposé ET que l'on dispose de VRAIS avis Turo. Pas de données inventées :
 // laissé désactivé tant qu'aucune source réelle n'est configurée.
 export const SHOW_TURO_REVIEWS = false;
-export const TURO_LISTING_URL =
-  "https://turo.com/fr/fr/location-suv/france/undefined/dacia/bigster-hybrid/3517110";
+// L'URL de l'annonce Turo est centralisée dans lib/location.ts (TURO_LISTING_URL).

@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { trackEvent } from "@/lib/gtag";
+import { TURO_LISTING_URL } from "@/lib/location";
 
 const photos = [1, 6, 7, 8, 9, 10, 11, 17].map((n) => ({
   src: `/photos/voiture/bigster-${n}.jpg`,
@@ -30,7 +31,7 @@ export default function CarSection() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <a
-                href="https://turo.com/fr/fr/location-suv/france/undefined/dacia/bigster-hybrid/3517110"
+                href={TURO_LISTING_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => trackEvent("click_turo")}
