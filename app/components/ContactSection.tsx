@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useBooking } from "./BookingProvider";
 import Icon, { type IconName } from "./Icon";
 import {
   GOOGLE_MAPS_PLACE_URL,
   GOOGLE_MAPS_DIRECTIONS_URL,
 } from "@/lib/location";
+import { MIN_LEAD_DAYS } from "@/lib/pricing";
 import { trackLead } from "@/lib/gtag";
 
 // Clé Web3Forms (publique par conception) — obtenue gratuitement sur
@@ -16,10 +17,47 @@ const WEB3FORMS_ACCESS_KEY =
   "5d2024a2-f384-4502-9b1b-57e56fb1947c";
 
 type Status = "idle" | "sending" | "success" | "error";
+type Availability = { blocked: string[] };
 
 function frDate(iso: string): string {
   const [y, m, d] = iso.split("-");
   return d && m && y ? `${d}/${m}/${y}` : iso;
+}
+
+function todayIso(): string {
+  const n = new Date();
+  return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}-${String(
+    n.getDate()
+  ).padStart(2, "0")}`;
+}
+
+function addDaysIso(iso: string, days: number): string {
+  const d = new Date(`${iso}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+// Y a-t-il au moins une nuit réservée dans la plage [checkIn, checkOut[ ?
+function rangeHasBlocked(
+  checkIn: string,
+  checkOut: string,
+  blocked: Set<string>
+): boolean {
+  const end = new Date(`${checkOut}T00:00:00Z`);
+  for (
+    let d = new Date(`${checkIn}T00:00:00Z`);
+    d < end;
+    d.setUTCDate(d.getUTCDate() + 1)
+  ) {
+    if (blocked.has(d.toISOString().slice(0, 10))) return true;
+  }
+  return false;
+}
+
+function scrollToCalendar() {
+  document
+    .getElementById("disponibilites")
+    ?.scrollIntoView({ behavior: "smooth" });
 }
 
 export default function ContactSection() {
@@ -34,6 +72,32 @@ export default function ContactSection() {
   });
   const [status, setStatus] = useState<Status>("idle");
   const { selection } = useBooking();
+
+  // Disponibilités en direct (mêmes données que le calendrier) : sert de
+  // garde-fou pour ne JAMAIS laisser envoyer une demande sur des dates réservées.
+  const [blockedList, setBlockedList] = useState<string[] | null>(null);
+  useEffect(() => {
+    fetch("/api/availability")
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((d: Availability) => setBlockedList(d.blocked ?? []))
+      .catch(() => setBlockedList([])); // en cas d'échec, on ne bloque pas l'envoi
+  }, []);
+  const blocked = useMemo(() => new Set(blockedList ?? []), [blockedList]);
+  const minDate = useMemo(() => addDaysIso(todayIso(), MIN_LEAD_DAYS), []);
+
+  // Message d'erreur sur les dates (null = ok). Empêche l'envoi tant qu'il existe.
+  const dateError = useMemo<string | null>(() => {
+    const { dateArrivee: ci, dateDepart: co } = form;
+    if (!ci || !co) return null; // champs requis gérés à part
+    if (ci < minDate) return "La date d'arrivée est déjà passée.";
+    if (co <= ci) return "La date de départ doit être après la date d'arrivée.";
+    if (blocked.has(ci))
+      return "Cette date d'arrivée n'est plus disponible — choisissez dans le calendrier.";
+    if (rangeHasBlocked(ci, co, blocked))
+      return "Une ou plusieurs nuits de cette période sont déjà réservées — choisissez dans le calendrier.";
+    return null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.dateArrivee, form.dateDepart, blocked, minDate]);
 
   // Pré-remplit le formulaire quand le visiteur sélectionne des dates dans le
   // calendrier de disponibilités (bouton « Demander ces dates »).
@@ -79,6 +143,11 @@ export default function ContactSection() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Garde-fou : pas d'envoi sans dates valides et disponibles.
+    if (!form.dateArrivee || !form.dateDepart || dateError) {
+      scrollToCalendar();
+      return;
+    }
     setStatus("sending");
 
     try {
@@ -300,33 +369,65 @@ export default function ContactSection() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block font-lato text-sm text-gray-600 mb-1">
-                      Date d&apos;arrivée *
-                    </label>
-                    <input
-                      type="date"
-                      name="dateArrivee"
-                      required
-                      value={form.dateArrivee}
-                      onChange={handleChange}
-                      className="w-full border border-sand rounded-lg px-4 py-3 font-lato text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-sea-blue/30 focus:border-sea-blue transition-colors"
-                    />
+                <div>
+                  <label className="block font-lato text-sm text-gray-600 mb-1">
+                    Dates du séjour *
+                  </label>
+                  <div className="grid grid-cols-2 gap-4">
+                    <button
+                      type="button"
+                      onClick={scrollToCalendar}
+                      className="w-full text-left border border-sand rounded-lg px-4 py-3 font-lato text-sm focus:outline-none focus:ring-2 focus:ring-sea-blue/30 focus:border-sea-blue hover:border-sea-blue transition-colors"
+                    >
+                      <span className="block text-[11px] uppercase tracking-wider text-gray-400">
+                        Arrivée
+                      </span>
+                      <span
+                        className={
+                          form.dateArrivee ? "text-gray-700" : "text-gray-400"
+                        }
+                      >
+                        {form.dateArrivee ? frDate(form.dateArrivee) : "Choisir"}
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={scrollToCalendar}
+                      className="w-full text-left border border-sand rounded-lg px-4 py-3 font-lato text-sm focus:outline-none focus:ring-2 focus:ring-sea-blue/30 focus:border-sea-blue hover:border-sea-blue transition-colors"
+                    >
+                      <span className="block text-[11px] uppercase tracking-wider text-gray-400">
+                        Départ
+                      </span>
+                      <span
+                        className={
+                          form.dateDepart ? "text-gray-700" : "text-gray-400"
+                        }
+                      >
+                        {form.dateDepart ? frDate(form.dateDepart) : "Choisir"}
+                      </span>
+                    </button>
                   </div>
-                  <div>
-                    <label className="block font-lato text-sm text-gray-600 mb-1">
-                      Date de départ *
-                    </label>
-                    <input
-                      type="date"
-                      name="dateDepart"
-                      required
-                      value={form.dateDepart}
-                      onChange={handleChange}
-                      className="w-full border border-sand rounded-lg px-4 py-3 font-lato text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-sea-blue/30 focus:border-sea-blue transition-colors"
-                    />
-                  </div>
+                  {dateError ? (
+                    <p className="font-lato text-xs text-red-600 mt-1.5 flex items-start gap-1.5">
+                      <Icon
+                        name="calendar"
+                        size={13}
+                        className="flex-shrink-0 mt-0.5"
+                      />
+                      {dateError}
+                    </p>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={scrollToCalendar}
+                      className="font-lato text-xs text-gold hover:text-sea-blue transition-colors mt-1.5 inline-flex items-center gap-1.5"
+                    >
+                      <Icon name="calendar" size={13} className="flex-shrink-0" />
+                      {form.dateArrivee
+                        ? "Modifier mes dates dans le calendrier"
+                        : "Sélectionner des dates disponibles dans le calendrier"}
+                    </button>
+                  )}
                 </div>
 
                 <div>
@@ -372,7 +473,12 @@ export default function ContactSection() {
 
                 <button
                   type="submit"
-                  disabled={status === "sending"}
+                  disabled={
+                    status === "sending" ||
+                    !form.dateArrivee ||
+                    !form.dateDepart ||
+                    !!dateError
+                  }
                   className="w-full bg-gold hover:bg-gold-light text-white py-4 rounded-lg font-lato font-bold tracking-wider uppercase text-sm transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0"
                 >
                   {status === "sending" ? "Envoi en cours..." : "Envoyer la demande"}
