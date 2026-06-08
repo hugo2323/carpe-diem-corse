@@ -37,6 +37,16 @@ function frDate(iso: string): string {
   return `${d}/${m}/${y}`;
 }
 
+// Lien Google Flights pré-rempli : destination Ajaccio (AJA) + dates du séjour.
+// L'aéroport de DÉPART est détecté automatiquement par Google selon la
+// localisation du visiteur (vrais tarifs live, aucune API requise).
+function flightsSearchUrl(checkIn: string, checkOut: string): string {
+  const q = `Flights to Ajaccio AJA on ${checkIn} through ${checkOut}`;
+  return `https://www.google.com/travel/flights?hl=fr&curr=EUR&q=${encodeURIComponent(
+    q
+  )}`;
+}
+
 function addDaysIso(iso: string, days: number): string {
   const d = new Date(`${iso}T00:00:00Z`);
   d.setUTCDate(d.getUTCDate() + days);
@@ -656,6 +666,18 @@ export default function AvailabilityCalendar() {
               <span>Frais de ménage (à régler sur place)</span>
               <span>{CLEANING_FEE} €</span>
             </div>
+
+            {/* Estimation des billets d'avion (Google Flights, départ auto-détecté) */}
+            <a
+              href={flightsSearchUrl(checkIn, checkOut)}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => trackEvent("click_flights")}
+              className="mt-4 flex items-center justify-center gap-2 rounded-lg border border-sea-blue/15 bg-white px-4 py-2.5 font-lato text-sm text-sea-blue hover:border-sea-blue/40 hover:text-gold transition-colors"
+            >
+              <Icon name="plane" size={15} className="flex-shrink-0" />
+              Estimer les billets d&apos;avion vers Ajaccio à ces dates →
+            </a>
 
             <p className="font-lato text-[11px] text-gray-400 mt-3 text-center">
               Tarif indicatif hors taxe de séjour. Forfait ménage de {CLEANING_FEE} €
