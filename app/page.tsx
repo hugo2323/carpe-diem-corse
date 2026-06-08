@@ -5,10 +5,8 @@ import VillaSection from "./components/VillaSection";
 import GalleryPreview from "./components/GalleryPreview";
 import VirtualTourSection from "./components/VirtualTourSection";
 import AvailabilitySection from "./components/AvailabilitySection";
-import PricingCTA from "./components/PricingCTA";
 import CarSection from "./components/CarSection";
 import ReviewsSection from "./components/ReviewsSection";
-import ContactSection from "./components/ContactSection";
 import Footer from "./components/Footer";
 import { BookingProvider } from "./components/BookingProvider";
 import { SITE_URL, VILLA_COORDS, GOOGLE_MAPS_PLACE_URL } from "@/lib/location";
@@ -70,12 +68,10 @@ export default function Home() {
       <VillaSection />
       <GalleryPreview />
       <VirtualTourSection />
+      <CarSection />
+      <ReviewsSection />
       <BookingProvider>
         <AvailabilitySection />
-        <PricingCTA />
-        <CarSection />
-        <ReviewsSection />
-        <ContactSection />
       </BookingProvider>
       <Footer />
     </main>

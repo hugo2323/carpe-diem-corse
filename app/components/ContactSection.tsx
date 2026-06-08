@@ -2,11 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useBooking } from "./BookingProvider";
-import Icon, { type IconName } from "./Icon";
-import {
-  GOOGLE_MAPS_PLACE_URL,
-  GOOGLE_MAPS_DIRECTIONS_URL,
-} from "@/lib/location";
+import Icon from "./Icon";
 import { MIN_LEAD_DAYS } from "@/lib/pricing";
 import { trackLead } from "@/lib/gtag";
 
@@ -196,91 +192,10 @@ export default function ContactSection() {
   };
 
   return (
-    <section id="reserver" className="py-20 md:py-28 bg-sea-blue">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <span className="text-gold font-lato text-sm tracking-[0.3em] uppercase mb-3 block">
-            Contact &amp; Réservation
-          </span>
-          <h2 className="font-playfair text-4xl md:text-5xl text-white mb-4">
-            Réservez votre séjour
-          </h2>
-          <div className="w-20 h-0.5 bg-gold mx-auto" />
-        </div>
-
-        <div className="grid lg:grid-cols-2 gap-12 lg:gap-16">
-          {/* Contact info */}
-          <div>
-            <h3 className="font-playfair text-2xl text-white mb-8 font-semibold">
-              Nous contacter directement
-            </h3>
-
-            <div className="space-y-6">
-              {([
-                { icon: "phone", label: "Téléphone", value: "06.74.25.63.36", href: "tel:+33674256336" },
-                { icon: "mail", label: "Email", value: "hugo.valette@outlook.com", href: "mailto:hugo.valette@outlook.com" },
-                { icon: "pin", label: "Adresse", value: "Pietrosella – Le Ruppione (20166), Corse-du-Sud", href: null },
-                { icon: "concierge", label: "Conciergerie", value: "Accueil par Kalypso Conciergerie", href: null },
-              ] as { icon: IconName; label: string; value: string; href: string | null }[]).map((c) => (
-                <div key={c.label} className="flex items-start gap-4">
-                  <span className="text-gold w-8 flex-shrink-0 flex justify-center pt-0.5">
-                    <Icon name={c.icon} size={22} />
-                  </span>
-                  <div>
-                    <p className="font-lato text-white/60 text-xs uppercase tracking-wider mb-1">
-                      {c.label}
-                    </p>
-                    {c.href ? (
-                      <a
-                        href={c.href}
-                        className="font-lato text-white hover:text-gold transition-colors duration-200"
-                      >
-                        {c.value}
-                      </a>
-                    ) : (
-                      <p className="font-lato text-white">{c.value}</p>
-                    )}
-                    {c.label === "Adresse" && (
-                      <div className="flex flex-col gap-2 mt-3">
-                        <a
-                          href={GOOGLE_MAPS_PLACE_URL}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="font-lato text-gold hover:text-white transition-colors duration-200 text-sm inline-flex items-center gap-1.5"
-                        >
-                          <Icon name="pin" size={15} className="flex-shrink-0" />
-                          Voir la villa sur Google Maps
-                        </a>
-                        <a
-                          href={GOOGLE_MAPS_DIRECTIONS_URL}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="font-lato text-white/70 hover:text-gold transition-colors duration-200 text-sm inline-flex items-center gap-1.5"
-                        >
-                          <Icon name="navigation" size={15} className="flex-shrink-0" />
-                          Obtenir l&apos;itinéraire
-                        </a>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-10 p-6 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
-              <p className="font-lato text-white/80 text-sm leading-relaxed">
-                Pour une réponse rapide, contactez-nous par téléphone ou via
-                les plateformes Airbnb et Abritel. Nous répondons généralement
-                dans les 24h.
-              </p>
-            </div>
-          </div>
-
-          {/* Form */}
-          <div className="bg-white rounded-2xl p-8 shadow-2xl">
-            <h3 className="font-playfair text-2xl text-sea-blue mb-6 font-semibold">
-              Demande de réservation
-            </h3>
+    <div className="bg-white rounded-2xl p-8 shadow-2xl">
+      <h3 className="font-playfair text-2xl text-sea-blue mb-6 font-semibold">
+        Demande de réservation
+      </h3>
 
             {selection && status !== "success" && (
               <div className="mb-6 bg-cream rounded-xl px-4 py-3 border border-gold/20 flex items-center justify-between gap-3">
@@ -485,9 +400,6 @@ export default function ContactSection() {
                 </button>
               </form>
             )}
-          </div>
-        </div>
-      </div>
-    </section>
+    </div>
   );
 }
