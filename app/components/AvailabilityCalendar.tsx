@@ -547,6 +547,13 @@ export default function AvailabilityCalendar() {
                 </div>
               )}
 
+              {currentQuote.timeDiscountKind === "promo" && (
+                <div className="flex items-center justify-between text-gold">
+                  <span>Promotion −{currentQuote.promoPct}%</span>
+                  <span>−{currentQuote.timeSaved.toLocaleString("fr-FR")} €</span>
+                </div>
+              )}
+
               {/* Remise pack véhicule (5% de la base, cumulable) */}
               {currentQuote.vehicleSaved > 0 && (
                 <div className="flex items-center justify-between text-gold">

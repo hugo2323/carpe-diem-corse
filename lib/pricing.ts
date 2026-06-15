@@ -114,28 +114,43 @@ function daysBetween(fromIso: string, toIso: string): number {
 }
 
 // --- Promotions ponctuelles (alignées sur les promos Airbnb) ---
-// Fenêtres de dates [from, to[ avec un PRIX VILLA TOTAL fixe (hors véhicule),
-// repris tel quel des promotions Airbnb. Le tarif/nuit en découle (total ÷
-// nuits) et REMPLACE le tarif saisonnier pour ces nuits. Les nuits en promo
-// sont « verrouillées » : aucune remise (dernière minute, séjour, pack
-// véhicule) ne s'applique par-dessus, pour ne jamais passer sous le prix
-// Airbnb annoncé. Une sélection couvrant exactement une fenêtre retombe donc
-// pile sur le total indiqué.
+// Fenêtres de dates [from, to[ avec un PRIX VILLA TOTAL cible (hors véhicule),
+// repris tel quel des promotions Airbnb. On en déduit un POURCENTAGE de remise
+// sur le tarif saisonnier plein, affiché comme une vraie promo (« −X% », plein
+// tarif barré). Une sélection couvrant exactement la fenêtre retombe pile sur
+// le total Airbnb. La remise −5% pack véhicule reste cumulable par-dessus.
 type Promotion = { from: string; to: string; villaTotal: number };
-const PROMOTIONS: Promotion[] = [
+const PROMOTION_TARGETS: Promotion[] = [
   { from: "2026-06-29", to: "2026-07-19", villaTotal: 4024 },
   { from: "2026-07-27", to: "2026-08-04", villaTotal: 1655 },
   { from: "2026-08-14", to: "2026-08-17", villaTotal: 619 },
 ];
 
-// Tarif villa/nuit (EUR, non arrondi) si la nuit `isoDate` tombe dans une
-// promo, sinon null.
-function promoNightlyForDate(isoDate: string): number | null {
+// Somme du tarif saisonnier plein sur la fenêtre [from, to[.
+function seasonalBase(fromIso: string, toIso: string): number {
+  let base = 0;
+  const end = new Date(`${toIso}T00:00:00Z`);
+  for (
+    let d = new Date(`${fromIso}T00:00:00Z`);
+    d < end;
+    d.setUTCDate(d.getUTCDate() + 1)
+  ) {
+    base += rateForDate(VILLA, d.toISOString().slice(0, 10));
+  }
+  return base;
+}
+
+// Chaque promo, enrichie de sa fraction de remise `frac` (0–1) déduite du prix
+// cible : appliquée par nuit, la somme retombe sur le total Airbnb.
+const PROMOTIONS = PROMOTION_TARGETS.map((p) => {
+  const base = seasonalBase(p.from, p.to);
+  return { ...p, frac: base > 0 ? 1 - p.villaTotal / base : 0 };
+});
+
+// Fraction de remise (0–1) si la nuit `isoDate` tombe dans une promo, sinon null.
+function promoFracForDate(isoDate: string): number | null {
   for (const p of PROMOTIONS) {
-    if (isoDate >= p.from && isoDate < p.to) {
-      const nights = daysBetween(p.from, p.to);
-      if (nights > 0) return p.villaTotal / nights;
-    }
+    if (isoDate >= p.from && isoDate < p.to) return p.frac;
   }
   return null;
 }
@@ -153,7 +168,12 @@ export function nightDiscountPct(nightIso: string, today: string): number {
 export type LastMinuteTier = { pct: number; nights: number; saved: number };
 
 // Remise « temps » réellement appliquée (la meilleure des trois candidates).
-export type TimeDiscountKind = "none" | "last_minute" | "length_of_stay" | "gap";
+export type TimeDiscountKind =
+  | "none"
+  | "last_minute"
+  | "length_of_stay"
+  | "gap"
+  | "promo";
 
 export type Quote = {
   nights: number;
@@ -165,6 +185,7 @@ export type Quote = {
   lengthOfStaySaved: number;
   gapDiscountPct: number;
   gapDiscountSaved: number;
+  promoPct: number; // % de remise promo (0 si pas de promo sur le séjour)
   // Remise « temps » appliquée = la meilleure des trois (pas de cumul entre elles)
   timeDiscountKind: TimeDiscountKind;
   timeSaved: number;
@@ -196,22 +217,24 @@ export function quote(
   let villaBase = 0;
   let carBase = 0;
   let nights = 0;
-  let hasPromo = false;
+  let promoBase = 0; // base saisonnière des nuits en promo
+  let promoSavedAcc = 0; // remise promo cumulée (avant arrondi)
   const tierAcc: Record<number, { nights: number; saved: number }> = {};
 
   for (let d = new Date(start); d < end; d.setUTCDate(d.getUTCDate() + 1)) {
     const iso = d.toISOString().slice(0, 10);
-    const promoNightly = promoNightlyForDate(iso);
-    // Nuit en promo : tarif promo (déjà au plancher), nuit « verrouillée » →
-    // pas de remise dernière minute. Sinon : tarif saisonnier classique.
-    const nightly = promoNightly ?? rateForDate(VILLA, iso);
+    const nightly = rateForDate(VILLA, iso);
     villaBase += nightly;
     carBase += rateForDate(CAR, iso);
     nights++;
 
-    if (promoNightly != null) {
-      hasPromo = true;
-      continue; // pas de dernière minute sur une nuit en promo
+    // Nuit en promo : remise en % sur le tarif plein. Elle remplace la
+    // dernière minute pour cette nuit (pas de cumul des deux).
+    const frac = promoFracForDate(iso);
+    if (frac != null) {
+      promoBase += nightly;
+      promoSavedAcc += nightly * frac;
+      continue;
     }
 
     const pct = today ? nightDiscountPct(iso, today) : 0;
@@ -222,8 +245,9 @@ export function quote(
     }
   }
 
-  // Le tarif promo par nuit peut être décimal : on arrondit la base affichée.
-  villaBase = Math.round(villaBase);
+  const hasPromo = promoBase > 0;
+  const promoSaved = Math.round(promoSavedAcc);
+  const promoPct = hasPromo ? Math.round((promoSaved / promoBase) * 100) : 0;
 
   // Candidat 1 : dernière minute dégressive (par nuit).
   const lastMinuteTiers: LastMinuteTier[] = Object.keys(tierAcc)
@@ -236,40 +260,41 @@ export function quote(
     }));
   const lastMinuteSaved = lastMinuteTiers.reduce((s, t) => s + t.saved, 0);
 
-  // Candidats 2 et 3 désactivés quand le séjour contient des nuits en promo :
-  // le tarif promo est déjà au plancher, on n'empile pas d'autre remise.
   // Candidat 2 : remise à la durée de séjour.
-  const lengthOfStayPct = hasPromo ? 0 : lengthOfStayDiscountPct(nights);
+  const lengthOfStayPct = lengthOfStayDiscountPct(nights);
   const lengthOfStaySaved = Math.round((villaBase * lengthOfStayPct) / 100);
 
   // Candidat 3 : remise « créneau » (trou comblé), % fourni par l'appelant.
-  const gapDiscountSaved = hasPromo
-    ? 0
-    : Math.round((villaBase * gapDiscountPct) / 100);
+  const gapDiscountSaved = Math.round((villaBase * gapDiscountPct) / 100);
 
-  // On applique la MEILLEURE des trois remises « temps » (pas de cumul).
+  // Remise « temps » appliquée : une promo prime sur tout (elle EST le prix
+  // Airbnb voulu) ; sinon on prend la MEILLEURE des trois (pas de cumul).
   let timeSaved = 0;
   let timeDiscountKind: TimeDiscountKind = "none";
-  if (lastMinuteSaved > timeSaved) {
-    timeSaved = lastMinuteSaved;
-    timeDiscountKind = "last_minute";
-  }
-  if (lengthOfStaySaved > timeSaved) {
-    timeSaved = lengthOfStaySaved;
-    timeDiscountKind = "length_of_stay";
-  }
-  if (gapDiscountSaved > timeSaved) {
-    timeSaved = gapDiscountSaved;
-    timeDiscountKind = "gap";
+  if (hasPromo) {
+    timeSaved = promoSaved;
+    timeDiscountKind = "promo";
+  } else {
+    if (lastMinuteSaved > timeSaved) {
+      timeSaved = lastMinuteSaved;
+      timeDiscountKind = "last_minute";
+    }
+    if (lengthOfStaySaved > timeSaved) {
+      timeSaved = lengthOfStaySaved;
+      timeDiscountKind = "length_of_stay";
+    }
+    if (gapDiscountSaved > timeSaved) {
+      timeSaved = gapDiscountSaved;
+      timeDiscountKind = "gap";
+    }
   }
 
-  // Pack véhicule : 5% de la base, cumulable avec la remise temps. Désactivé
-  // en promo (le prix villa promo est ferme ; le véhicule s'ajoute au total).
-  const vehiclePackPct = withCar && !hasPromo ? VEHICLE_PACK_DISCOUNT_PCT : 0;
-  const vehicleSaved =
-    withCar && !hasPromo
-      ? Math.round((villaBase * VEHICLE_PACK_DISCOUNT_PCT) / 100)
-      : 0;
+  // Pack véhicule : 5% de la base, cumulable avec la remise temps (promo y
+  // compris : louer le véhicule ajoute bien −5% sur la villa).
+  const vehiclePackPct = withCar ? VEHICLE_PACK_DISCOUNT_PCT : 0;
+  const vehicleSaved = withCar
+    ? Math.round((villaBase * VEHICLE_PACK_DISCOUNT_PCT) / 100)
+    : 0;
 
   const totalSaved = timeSaved + vehicleSaved;
   const villaTotal = Math.max(0, villaBase - totalSaved);
@@ -286,6 +311,7 @@ export function quote(
     lengthOfStaySaved,
     gapDiscountPct,
     gapDiscountSaved,
+    promoPct,
     timeDiscountKind,
     timeSaved,
     vehiclePackPct,

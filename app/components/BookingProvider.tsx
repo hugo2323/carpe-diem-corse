@@ -8,7 +8,7 @@ export type BookingSelection = {
   nights: number;
   villaBase: number; // villa plein tarif
   timeSaved: number; // remise « temps » appliquée (meilleure des 3)
-  timeDiscountKind: "none" | "last_minute" | "length_of_stay" | "gap";
+  timeDiscountKind: "none" | "last_minute" | "length_of_stay" | "gap" | "promo";
   vehicleSaved: number; // remise pack véhicule (5% de la base) si véhicule
   villaTotal: number; // villa après toutes remises
   withCar: boolean; // véhicule ajouté au séjour

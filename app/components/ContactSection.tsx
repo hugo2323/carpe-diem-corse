@@ -115,6 +115,7 @@ export default function ContactSection() {
       last_minute: "dernière minute dégressive",
       length_of_stay: "réduction séjour",
       gap: "offre spéciale",
+      promo: "promotion",
     };
     const remises: string[] = [];
     if (selection.timeSaved > 0 && timeLabel[selection.timeDiscountKind])
