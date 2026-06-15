@@ -155,6 +155,17 @@ function promoFracForDate(isoDate: string): number | null {
   return null;
 }
 
+// Fenêtres de promo (arrivée → départ), pour les présenter comme « offres à
+// saisir » dans le calendrier.
+export function promotionWindows(): { checkIn: string; checkOut: string }[] {
+  return PROMOTION_TARGETS.map((p) => ({ checkIn: p.from, checkOut: p.to }));
+}
+
+// La nuit `isoDate` tombe-t-elle dans une promo ?
+export function isPromoNight(isoDate: string): boolean {
+  return promoFracForDate(isoDate) != null;
+}
+
 export function nightDiscountPct(nightIso: string, today: string): number {
   const days = daysBetween(today, nightIso);
   if (Number.isNaN(days) || days < 0) return 0;

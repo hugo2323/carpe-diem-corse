@@ -5,6 +5,8 @@ import {
   quote,
   minNightsForDate,
   gapDiscountPctForNights,
+  promotionWindows,
+  isPromoNight,
   MIN_LEAD_DAYS,
   CLEANING_FEE,
 } from "@/lib/pricing";
@@ -133,13 +135,47 @@ export default function AvailabilityCalendar() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [checkIn, checkOut, withCar, today, minDate, blocked]);
 
-  // Créneaux orphelins (1-9 nuits) coincés ENTRE deux réservations → offres
-  // spéciales à tarif réduit, avec et sans véhicule.
+  // Offres à saisir = promotions Airbnb + créneaux orphelins (1-9 nuits)
+  // coincés entre deux réservations, le tout à tarif réduit (avec/sans véhicule).
   const deals = useMemo(() => {
     if (!today || !minDate) return [];
     const horizon = addDaysIso(minDate, 365);
 
-    // Repère les suites de nuits libres.
+    type Deal = {
+      checkIn: string;
+      checkOut: string;
+      nights: number;
+      pct: number;
+      villaTotal: number;
+      totalWithCar: number | null;
+    };
+    const out: Deal[] = [];
+
+    const buildDeal = (checkIn: string, checkOut: string, pct: number): Deal | null => {
+      const q = quote(checkIn, checkOut, false, today, pct);
+      const qc = quote(checkIn, checkOut, true, today, pct);
+      if (!q) return null;
+      return {
+        checkIn,
+        checkOut,
+        nights: q.nights,
+        pct: q.promoPct > 0 ? q.promoPct : pct,
+        villaTotal: q.villaTotal,
+        totalWithCar: qc ? qc.total : null,
+      };
+    };
+
+    // 1) Promotions : présentées en premier (offres phares), si encore à venir
+    //    et entièrement disponibles.
+    for (const w of promotionWindows()) {
+      if (w.checkIn < minDate) continue;
+      if (rangeHasBlocked(w.checkIn, w.checkOut, blocked)) continue;
+      const d = buildDeal(w.checkIn, w.checkOut, 0);
+      if (d) out.push(d);
+    }
+
+    // 2) Créneaux orphelins (trous 1-9 nuits entre deux réservations), en
+    //    excluant ceux déjà couverts par une promo.
     const runs: { start: string; end: string }[] = [];
     let runStart: string | null = null;
     for (let d = minDate; d < horizon; d = addDaysIso(d, 1)) {
@@ -151,38 +187,23 @@ export default function AvailabilityCalendar() {
       }
     }
 
-    const out: {
-      checkIn: string;
-      checkOut: string;
-      nights: number;
-      pct: number;
-      villaTotal: number;
-      totalWithCar: number | null;
-    }[] = [];
-
     for (const r of runs) {
       const nights = nightsBetween(r.start, r.end) + 1;
       if (nights < 1 || nights > 9) continue;
       // Mur de réservation des deux côtés (vrai trou entre 2 séjours).
       if (!blocked.has(addDaysIso(r.start, -1))) continue;
       if (!blocked.has(addDaysIso(r.end, 1))) continue;
+      // Déjà géré par une promo ? on ne double pas.
+      if (isPromoNight(r.start)) continue;
 
       const checkIn = r.start;
       const checkOut = addDaysIso(r.end, 1);
       const pct = gapDiscountPctForNights(nights, checkIn);
-      const q = quote(checkIn, checkOut, false, today, pct);
-      const qc = quote(checkIn, checkOut, true, today, pct);
-      if (!q) continue;
-      out.push({
-        checkIn,
-        checkOut,
-        nights,
-        pct,
-        villaTotal: q.villaTotal,
-        totalWithCar: qc ? qc.total : null,
-      });
+      const d = buildDeal(checkIn, checkOut, pct);
+      if (d) out.push(d);
     }
-    return out.slice(0, 6);
+
+    return out.sort((a, b) => a.checkIn.localeCompare(b.checkIn)).slice(0, 6);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [blocked, today, minDate]);
 
