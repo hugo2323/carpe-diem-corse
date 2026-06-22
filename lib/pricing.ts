@@ -121,7 +121,7 @@ function daysBetween(fromIso: string, toIso: string): number {
 // le total Airbnb. La remise −5% pack véhicule reste cumulable par-dessus.
 type Promotion = { from: string; to: string; villaTotal: number };
 const PROMOTION_TARGETS: Promotion[] = [
-  { from: "2026-06-29", to: "2026-07-19", villaTotal: 4024 },
+  { from: "2026-06-29", to: "2026-07-12", villaTotal: 2374 }, // 12→18/07 réservé : promo recadrée sur les nuits restantes, même −43%
   { from: "2026-07-27", to: "2026-08-04", villaTotal: 1655 },
   { from: "2026-08-14", to: "2026-08-17", villaTotal: 619 },
 ];
