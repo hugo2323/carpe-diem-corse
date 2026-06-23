@@ -121,9 +121,9 @@ function daysBetween(fromIso: string, toIso: string): number {
 // le total Airbnb. La remise −5% pack véhicule reste cumulable par-dessus.
 type Promotion = { from: string; to: string; villaTotal: number };
 const PROMOTION_TARGETS: Promotion[] = [
-  { from: "2026-06-29", to: "2026-07-12", villaTotal: 2374 }, // 12→18/07 réservé : promo recadrée sur les nuits restantes, même −43%
-  { from: "2026-07-27", to: "2026-08-04", villaTotal: 1655 },
-  { from: "2026-08-14", to: "2026-08-17", villaTotal: 619 },
+  { from: "2026-06-29", to: "2026-07-12", villaTotal: 2576 }, // 12→18/07 réservé : promo sur les nuits restantes — prix Airbnb 2576 € (plein 4742 €)
+  { from: "2026-08-16", to: "2026-08-17", villaTotal: 200 }, // 14→16/08 loués : il ne reste que la nuit du 16 (clôture à 200 €)
+  { from: "2026-09-05", to: "2026-09-15", villaTotal: 3138 }, // prix Airbnb affiché — fenêtre proposée sans remise mise en avant
 ];
 
 // Somme du tarif saisonnier plein sur la fenêtre [from, to[.

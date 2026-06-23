@@ -117,11 +117,19 @@ async function fetchSource(
   }
 }
 
+// Indisponibilités saisies à la main par le propriétaire (réservations directes
+// ou hors plateformes, pas toujours répercutées dans les flux iCal). Format
+// [start, end[ — `end` exclusif (jour de départ libre). Fusionnées avec les iCal.
+const MANUAL_BLOCKED_RANGES: DateRange[] = [
+  { start: "2026-07-27", end: "2026-08-04" }, // 27/07→03/08 loué (dont la nuit du 03/08)
+];
+
 export async function fetchMergedAvailability(): Promise<Availability> {
   const results = await Promise.all(ICAL_SOURCES.map(fetchSource));
 
   const merged = new Set<string>();
   results.forEach((r) => r.dates.forEach((d) => merged.add(d)));
+  expandBlockedDates(MANUAL_BLOCKED_RANGES).forEach((d) => merged.add(d));
 
   return {
     blocked: Array.from(merged).sort(),

@@ -721,9 +721,14 @@ export default function AvailabilityCalendar() {
                   <span className="font-lato text-sm font-semibold text-sea-blue">
                     {frDate(deal.checkIn)} → {frDate(deal.checkOut)}
                   </span>
-                  <span className="bg-gold text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full">
-                    −{deal.pct}%
-                  </span>
+                  {/* Badge de remise seulement pour une vraie promo : une
+                      fenêtre proposée au prix Airbnb plein (remise négligeable)
+                      affiche juste les dates, sans badge. */}
+                  {deal.pct >= 5 && (
+                    <span className="bg-gold text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full">
+                      −{deal.pct}%
+                    </span>
+                  )}
                 </div>
                 <p className="font-lato text-xs text-gray-500 mb-4">
                   {deal.nights} nuit{deal.nights > 1 ? "s" : ""}
